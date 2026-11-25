@@ -46,6 +46,9 @@ const screens = [
     { name: '19-new-ftp', path: '/ftp', click: 'New FTP login' },
     { name: '20-new-cron', path: '/accounts/siti/cron', click: 'New job' },
     { name: '21-two-factor', path: '/settings', click: 'Set up' },
+    { name: '22-postgres', path: '/postgres' },
+    { name: '23-redis', path: '/redis' },
+    { name: '24-new-pg-login', path: '/postgres', click: 'New login' },
 ];
 
 const PORT = 9333;

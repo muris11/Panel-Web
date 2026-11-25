@@ -355,6 +355,34 @@ export interface DatabaseUserRow {
     databases: string[];
 }
 
+export interface PostgresDatabase {
+    id: number;
+    userId: number;
+    name: string;
+    status: string;
+    sizeBytes: number | null;
+    username: string;
+}
+
+export interface PostgresLogin {
+    id: number;
+    userId: number;
+    name: string;
+    status: string;
+    username: string;
+    databases: string[];
+}
+
+export interface RedisInstance {
+    id: number;
+    userId: number;
+    maxMemoryMb: number;
+    enabled: boolean;
+    username: string;
+    host: string;
+    port: number;
+}
+
 export interface FTPLogin {
     id: number;
     userId: number;

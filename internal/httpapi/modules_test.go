@@ -576,6 +576,33 @@ func TestServerPageNeedsAnAdministrator(t *testing.T) {
 	}
 }
 
+// signInAs tries a sign-in and returns the client that holds it, or nil when
+// the panel refused. It is how the tests prove an address or a password stopped
+// working.
+func signInAs(t *testing.T, server *httptest.Server, st *store.Store, login, password string) *http.Client {
+	t.Helper()
+
+	httpClient := client(t)
+
+	probe := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/auth/session", nil, "")
+	if probe.Status != http.StatusOK {
+		t.Fatalf("session probe answered %d", probe.Status)
+	}
+
+	csrf, _ := probe.Body["csrfToken"].(string)
+
+	answer := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/auth/login", map[string]any{
+		"login":    login,
+		"password": password,
+	}, csrf)
+
+	if answer.Status != http.StatusOK {
+		return nil
+	}
+
+	return httpClient
+}
+
 // itoa keeps the test file free of strconv noise at the call sites.
 func itoa(value int64) string {
 	if value == 0 {
@@ -593,3 +620,213 @@ func itoa(value int64) string {
 }
 
 var _ = sql.ErrNoRows
+
+func TestPostgresDatabaseAndLogin(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	created := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/postgres", map[string]any{
+		"username": "siti",
+		"suffix":   "analytics",
+	}, csrf)
+
+	if created.Status != http.StatusCreated {
+		t.Fatalf("adding a PostgreSQL database answered %d: %v", created.Status, created.Body)
+	}
+
+	row, _ := created.Body["database"].(map[string]any)
+	databaseID, _ := row["id"].(float64)
+
+	if row["name"] != "siti_analytics" {
+		t.Fatalf("the database is named %v, want siti_analytics", row["name"])
+	}
+
+	drain(t, queue, 1)
+
+	login := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/postgres-users", map[string]any{
+		"username":  "siti",
+		"suffix":    "analyticsapp",
+		"databases": []int64{int64(databaseID)},
+	}, csrf)
+
+	if login.Status != http.StatusCreated {
+		t.Fatalf("adding a PostgreSQL login answered %d: %v", login.Status, login.Body)
+	}
+
+	password, _ := login.Body["password"].(string)
+	if len(password) < 16 {
+		t.Fatalf("the login password is %q, too short", password)
+	}
+
+	drain(t, queue, 1)
+
+	listed := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/postgres", nil, "")
+	if listed.Status != http.StatusOK {
+		t.Fatalf("listing PostgreSQL answered %d: %v", listed.Status, listed.Body)
+	}
+
+	users, _ := listed.Body["users"].([]any)
+	if len(users) != 1 {
+		t.Fatalf("siti has %d PostgreSQL logins, want 1", len(users))
+	}
+
+	first, _ := users[0].(map[string]any)
+	if first["status"] != "active" {
+		t.Fatalf("the login is %v after its task ran, want active", first["status"])
+	}
+
+	loginID, _ := first["id"].(float64)
+
+	// A PATCH with no password keeps the stored one and only moves the grants.
+	updated := call(t, httpClient, http.MethodPatch,
+		server.URL+"/api/v1/postgres-users/"+itoa(int64(loginID)), map[string]any{
+			"databases": []int64{},
+		}, csrf)
+
+	if updated.Status != http.StatusOK {
+		t.Fatalf("editing the login answered %d: %v", updated.Status, updated.Body)
+	}
+
+	drain(t, queue, 1)
+
+	removed := call(t, httpClient, http.MethodDelete,
+		server.URL+"/api/v1/postgres-users/"+itoa(int64(loginID)), nil, csrf)
+
+	if removed.Status != http.StatusNoContent {
+		t.Fatalf("removing the login answered %d: %v", removed.Status, removed.Body)
+	}
+}
+
+func TestRedisInstanceIsOnePerAccount(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	before := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/redis", nil, "")
+	if before.Status != http.StatusOK {
+		t.Fatalf("reading Redis answered %d: %v", before.Status, before.Body)
+	}
+
+	if before.Body["instance"] != nil {
+		t.Fatalf("a new account already has a Redis instance: %v", before.Body)
+	}
+
+	created := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/redis", map[string]any{
+		"username":    "siti",
+		"maxMemoryMb": 256,
+	}, csrf)
+
+	if created.Status != http.StatusCreated {
+		t.Fatalf("creating the cache answered %d: %v", created.Status, created.Body)
+	}
+
+	password, _ := created.Body["password"].(string)
+	if len(password) < 16 {
+		t.Fatalf("the Redis password is %q, too short", password)
+	}
+
+	instance, _ := created.Body["instance"].(map[string]any)
+	instanceID, _ := instance["id"].(float64)
+
+	if instance["maxMemoryMb"] != float64(256) {
+		t.Fatalf("the ceiling is %v, want 256", instance["maxMemoryMb"])
+	}
+
+	drain(t, queue, 1)
+
+	// Asking again rotates the password instead of adding a second row.
+	rotated := call(t, httpClient, http.MethodPost,
+		server.URL+"/api/v1/redis/"+itoa(int64(instanceID)), map[string]any{}, csrf)
+
+	if rotated.Status != http.StatusOK {
+		t.Fatalf("rotating the password answered %d: %v", rotated.Status, rotated.Body)
+	}
+
+	rotatedPassword, _ := rotated.Body["password"].(string)
+	if rotatedPassword == password {
+		t.Fatal("rotating the password returned the same one")
+	}
+
+	drain(t, queue, 1)
+
+	resized := call(t, httpClient, http.MethodPatch,
+		server.URL+"/api/v1/redis/"+itoa(int64(instanceID)), map[string]any{"maxMemoryMb": 512}, csrf)
+
+	if resized.Status != http.StatusOK {
+		t.Fatalf("resizing answered %d: %v", resized.Status, resized.Body)
+	}
+
+	drain(t, queue, 1)
+
+	removed := call(t, httpClient, http.MethodDelete,
+		server.URL+"/api/v1/redis/"+itoa(int64(instanceID)), nil, csrf)
+
+	if removed.Status != http.StatusNoContent {
+		t.Fatalf("removing the cache answered %d: %v", removed.Status, removed.Body)
+	}
+
+	after := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/redis", nil, "")
+	if after.Body["instance"] != nil {
+		t.Fatalf("the instance is still there: %v", after.Body)
+	}
+}
+
+func TestProfileChangeAndPasswordRotateSessions(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	if queue == nil {
+		t.Fatal("the harness has no queue")
+	}
+
+	changed := call(t, httpClient, http.MethodPatch, server.URL+"/api/v1/me", map[string]any{
+		"name":  "Muhammad Rifqy",
+		"email": "rifqy@example.test",
+	}, csrf)
+
+	if changed.Status != http.StatusOK {
+		t.Fatalf("changing the profile answered %d: %v", changed.Status, changed.Body)
+	}
+
+	user, _ := changed.Body["user"].(map[string]any)
+	if user["email"] != "rifqy@example.test" {
+		t.Fatalf("the email is %v after the change", user["email"])
+	}
+
+	// The old address no longer signs in; the new one does.
+	if probe := signInAs(t, server, st, "admin@example.test", "rahasia123"); probe != nil {
+		t.Fatal("the old address still signs in")
+	}
+
+	wrong := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/me/password", map[string]any{
+		"currentPassword": "not-the-password",
+		"newPassword":     "a-new-long-password",
+	}, csrf)
+
+	if wrong.Status != http.StatusUnauthorized {
+		t.Fatalf("a wrong current password answered %d: %v", wrong.Status, wrong.Body)
+	}
+
+	rotated := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/me/password", map[string]any{
+		"currentPassword": "rahasia123",
+		"newPassword":     "a-new-long-password",
+	}, csrf)
+
+	if rotated.Status != http.StatusOK {
+		t.Fatalf("changing the password answered %d: %v", rotated.Status, rotated.Body)
+	}
+
+	// The browser that changed it keeps working, because the panel signs it in
+	// again under a new session.
+	me := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/me", nil, "")
+	if me.Status != http.StatusOK {
+		t.Fatalf("the session was not renewed: %d %v", me.Status, me.Body)
+	}
+
+	if other := signInAs(t, server, st, "admin@example.test", "rahasia123"); other != nil {
+		t.Fatal("the old password still signs in")
+	}
+}

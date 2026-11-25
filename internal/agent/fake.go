@@ -191,6 +191,33 @@ func (f *Fake) Call(_ context.Context, method string, params any) (json.RawMessa
 
 		answer = map[string]any{"user": user, "applied": true, "simulated": true}
 
+	case "pg.create_database", "pg.delete_database":
+		database, _ := values["database"].(string)
+
+		answer = map[string]any{"database": database, "done": true, "simulated": true}
+
+	case "pg.apply_user":
+		user, _ := values["user"].(string)
+
+		answer = map[string]any{"user": user, "applied": true, "simulated": true}
+
+	case "pg.delete_user":
+		user, _ := values["user"].(string)
+
+		answer = map[string]any{"user": user, "done": true, "simulated": true}
+
+	case "redis.provision":
+		answer = map[string]any{
+			"username":      values["username"],
+			"password":      values["password"],
+			"max_memory_mb": values["max_memory_mb"],
+			"done":          true,
+			"simulated":     true,
+		}
+
+	case "redis.deprovision", "redis.check", "redis.service", "redis.status", "redis.conf":
+		answer = map[string]any{"done": true, "simulated": true}
+
 	case "cron.apply", "ftp.ensure_dir", "backup.create", "backup.restore":
 		answer = map[string]any{"done": true, "simulated": true}
 

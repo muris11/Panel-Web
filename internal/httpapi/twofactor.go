@@ -156,6 +156,17 @@ func (s *Server) encodeSecret(secret string) (string, error) {
 	return auth.EncryptLaravel(s.cfg.AppKey, secret)
 }
 
+// decodeSecret is the reverse of encodeSecret: encrypted values written by
+// either panel come back as plain text.
+func (s *Server) decodeSecret(stored string) (string, error) {
+	stored = strings.TrimSpace(stored)
+	if stored == "" || s.cfg.AppKey == "" || !strings.HasPrefix(stored, "eyJ") {
+		return stored, nil
+	}
+
+	return auth.DecryptLaravel(s.cfg.AppKey, stored)
+}
+
 // otpauthURL is the URI an authenticator app scans. It is rendered as text
 // rather than a QR image: no dependency, and it can be pasted on a phone.
 func otpauthURL(username, secret string) string {

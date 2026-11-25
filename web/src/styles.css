@@ -300,6 +300,12 @@ button {
     padding: 16px;
 }
 
+/* A form that is a card's direct child carries the card's own padding; in a
+   drawer the body already has it, so this only applies inside cards. */
+.card > .form {
+    padding: 16px;
+}
+
 .stat {
     padding: 14px 16px 16px;
     display: flex;

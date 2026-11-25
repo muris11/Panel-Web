@@ -154,6 +154,25 @@ func parseID(w http.ResponseWriter, r *http.Request, name string) (int64, bool) 
 	return id, true
 }
 
+// visibleAccountByID loads an account by row id and checks the caller may see
+// it. A record owned by somebody else answers 404 rather than 403, exactly like
+// a name that does not exist.
+func (s *Server) visibleAccountByID(w http.ResponseWriter, r *http.Request, id int64) (store.User, bool) {
+	caller, ok := s.caller(w, r)
+	if !ok {
+		return store.User{}, false
+	}
+
+	account, err := s.store.UserByID(r.Context(), id)
+	if err != nil || account.Role != store.RoleUser || !mayManage(caller, account) {
+		fail(w, http.StatusNotFound, codeNotFound, "There is no account here.")
+
+		return store.User{}, false
+	}
+
+	return account, true
+}
+
 // audit records what an operator did, with the request's origin.
 func (s *Server) audit(r *http.Request, caller store.User, action, subjectType, subjectID string, extra map[string]any) {
 	actorID := caller.ID

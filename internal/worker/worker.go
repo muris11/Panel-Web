@@ -276,6 +276,28 @@ func (w *Worker) apply(ctx context.Context, task store.Task, output json.RawMess
 
 		return w.store.SetDatabaseUserStatusByName(ctx, answer.User, "active")
 
+	case "pg.create_database":
+		var answer struct {
+			Database string `json:"database"`
+		}
+
+		if err := json.Unmarshal(output, &answer); err != nil || answer.Database == "" {
+			return nil
+		}
+
+		return w.store.SetPostgresDatabaseStatusByName(ctx, answer.Database, "active")
+
+	case "pg.apply_user":
+		var answer struct {
+			User string `json:"user"`
+		}
+
+		if err := json.Unmarshal(output, &answer); err != nil || answer.User == "" {
+			return nil
+		}
+
+		return w.store.SetPostgresUserStatusByName(ctx, answer.User, "active")
+
 	case "web.remove_domain":
 		var answer struct {
 			Domain string `json:"domain"`

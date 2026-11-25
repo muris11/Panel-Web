@@ -16,6 +16,8 @@ import { Files, FilesPicker } from './pages/Files';
 import { FTP } from './pages/FTP';
 import { Login } from './pages/Login';
 import { Mail } from './pages/Mail';
+import { Postgres } from './pages/Postgres';
+import { Redis } from './pages/Redis';
 import { Server } from './pages/Server';
 import { Settings } from './pages/Settings';
 import { Shell } from './pages/Shell';
@@ -100,6 +102,14 @@ function Screen({ path, onToast }: { path: string; onToast: (message: string, to
 
     if (path === '/databases') {
         return <Databases onToast={onToast} />;
+    }
+
+    if (path === '/postgres') {
+        return <Postgres onToast={onToast} />;
+    }
+
+    if (path === '/redis') {
+        return <Redis onToast={onToast} />;
     }
 
     if (path === '/ftp') {

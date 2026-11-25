@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 
 import { api, when, type SessionRow, type TokenRow } from '../api';
 import { useSession } from '../session';
@@ -7,7 +8,7 @@ import { Badge, Button, Card, CardHead, Drawer, Empty, errorMessage, Field, Skel
 /** Account and session settings. Deliberately short: everything here is
  *  something an operator can act on. */
 export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' | 'bad') => void }) {
-    const { user, agent, signOut } = useSession();
+    const { user, agent, signOut, updateUser } = useSession();
 
     const [sessions, setSessions] = useState<SessionRow[] | null>(null);
     const [error, setError] = useState('');
@@ -103,6 +104,8 @@ export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' |
                 </Card>
             </div>
 
+            <Profile onSaved={(next) => updateUser(next)} onToast={onToast} />
+
             <TwoFactor />
 
             <Card>
@@ -169,6 +172,145 @@ export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' |
             </Card>
 
             <Tokens onToast={onToast} />
+        </div>
+    );
+}
+
+/** Profile: the name and address this account answers to, and the password it
+ *  signs in with. Changing the password signs every other browser out. */
+function Profile({
+    onSaved,
+    onToast,
+}: {
+    onSaved: (patch: { name: string; email: string }) => void;
+    onToast: (message: string, tone?: 'ok' | 'bad') => void;
+}) {
+    const { user } = useSession();
+
+    const [name, setName] = useState(user.name);
+    const [email, setEmail] = useState(user.email);
+    const [current, setCurrent] = useState('');
+    const [next, setNext] = useState('');
+    const [repeat, setRepeat] = useState('');
+    const [details, setDetails] = useState<Record<string, string>>({});
+    const [passwordFields, setPasswordFields] = useState<Record<string, string>>({});
+    const [savingDetails, setSavingDetails] = useState(false);
+    const [savingPassword, setSavingPassword] = useState(false);
+
+    async function saveDetails(event: FormEvent): Promise<void> {
+        event.preventDefault();
+        setSavingDetails(true);
+        setDetails({});
+
+        try {
+            const answer = await api<{ user: { name: string; email: string } }>('/me', {
+                method: 'PATCH',
+                body: { name, email },
+            });
+
+            onSaved({ name: answer.user.name, email: answer.user.email });
+            onToast('Your details were saved');
+        } catch (thrown) {
+            setDetails((thrown as { fields?: Record<string, string> }).fields ?? {});
+            onToast(errorMessage(thrown), 'bad');
+        } finally {
+            setSavingDetails(false);
+        }
+    }
+
+    async function savePassword(event: FormEvent): Promise<void> {
+        event.preventDefault();
+        setPasswordFields({});
+
+        if (next !== repeat) {
+            setPasswordFields({ repeat: 'The two passwords are not the same.' });
+
+            return;
+        }
+
+        setSavingPassword(true);
+
+        try {
+            await api('/me/password', { method: 'POST', body: { currentPassword: current, newPassword: next } });
+            setCurrent('');
+            setNext('');
+            setRepeat('');
+            onToast('Password changed; other browsers were signed out');
+        } catch (thrown) {
+            setPasswordFields((thrown as { fields?: Record<string, string> }).fields ?? {});
+            onToast(errorMessage(thrown), 'bad');
+        } finally {
+            setSavingPassword(false);
+        }
+    }
+
+    return (
+        <div className="grid-2">
+            <Card>
+                <CardHead title="Your details" />
+                <form className="form" onSubmit={(event) => void saveDetails(event)}>
+                    <Field
+                        label="Name"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        error={details.name}
+                        required
+                    />
+                    <Field
+                        label="Email address"
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        hint="Used to sign in as well as the username."
+                        error={details.email}
+                        required
+                    />
+                    <div className="row">
+                        <Button variant="primary" type="submit" busy={savingDetails}>
+                            Save details
+                        </Button>
+                    </div>
+                </form>
+            </Card>
+
+            <Card>
+                <CardHead title="Password" />
+                <form className="form" onSubmit={(event) => void savePassword(event)}>
+                    <Field
+                        label="Current password"
+                        type="password"
+                        value={current}
+                        onChange={(event) => setCurrent(event.target.value)}
+                        error={passwordFields.currentPassword}
+                        autoComplete="current-password"
+                        required
+                    />
+                    <Field
+                        label="New password"
+                        type="password"
+                        value={next}
+                        onChange={(event) => setNext(event.target.value)}
+                        hint="At least 12 characters."
+                        error={passwordFields.newPassword}
+                        autoComplete="new-password"
+                        required
+                    />
+                    <Field
+                        label="Repeat the new password"
+                        type="password"
+                        value={repeat}
+                        onChange={(event) => setRepeat(event.target.value)}
+                        error={passwordFields.repeat}
+                        autoComplete="new-password"
+                        required
+                    />
+                    <div className="row">
+                        <Button variant="primary" type="submit" busy={savingPassword}>
+                            Change password
+                        </Button>
+                    </div>
+                </form>
+            </Card>
         </div>
     );
 }

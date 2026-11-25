@@ -30,6 +30,8 @@ export function Shell({ children }: { children: ReactNode }) {
         { to: '/domains', label: 'Domains', icon: <IconGlobe /> },
         { to: '/mail', label: 'Mail', icon: <IconMail /> },
         { to: '/databases', label: 'Databases', icon: <IconDatabase /> },
+        { to: '/postgres', label: 'PostgreSQL', icon: <IconDatabase /> },
+        { to: '/redis', label: 'Redis', icon: <IconServer /> },
         { to: '/ftp', label: 'FTP', icon: <IconFolder /> },
     ];
 

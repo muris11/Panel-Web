@@ -33,6 +33,8 @@ const screens = [
     '/domains/2',
     '/mail',
     '/databases',
+    '/postgres',
+    '/redis',
     '/ftp',
     '/files',
     '/server',

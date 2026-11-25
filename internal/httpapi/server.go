@@ -60,6 +60,8 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/me/two-factor", s.requireAuth(http.HandlerFunc(s.handleTwoFactor)))
 	mux.Handle("DELETE /api/v1/me/two-factor", s.requireAuth(http.HandlerFunc(s.handleTwoFactor)))
 	mux.Handle("POST /api/v1/me/two-factor/confirm", s.requireAuth(http.HandlerFunc(s.handleTwoFactorConfirm)))
+	mux.Handle("PATCH /api/v1/me", s.requireAuth(http.HandlerFunc(s.handleProfile)))
+	mux.Handle("POST /api/v1/me/password", s.requireAuth(http.HandlerFunc(s.handlePassword)))
 	mux.Handle("GET /api/v1/dashboard", s.requireAuth(http.HandlerFunc(s.handleDashboard)))
 	mux.Handle("GET /api/v1/system", s.requireAuth(http.HandlerFunc(s.handleSystemInfo)))
 	mux.Handle("GET /api/v1/sessions", s.requireAuth(http.HandlerFunc(s.handleSessions)))
@@ -121,6 +123,21 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/database-users", accounts(http.HandlerFunc(s.handleDatabaseUsers)))
 	mux.Handle("PATCH /api/v1/database-users/{id}", accounts(http.HandlerFunc(s.handleDatabaseUser)))
 	mux.Handle("DELETE /api/v1/database-users/{id}", accounts(http.HandlerFunc(s.handleDatabaseUser)))
+
+	// PostgreSQL databases and their logins.
+	mux.Handle("GET /api/v1/postgres", accounts(http.HandlerFunc(s.handlePostgres)))
+	mux.Handle("POST /api/v1/postgres", accounts(http.HandlerFunc(s.handlePostgres)))
+	mux.Handle("DELETE /api/v1/postgres/{id}", accounts(http.HandlerFunc(s.handlePostgresDatabase)))
+	mux.Handle("POST /api/v1/postgres-users", accounts(http.HandlerFunc(s.handlePostgresUsers)))
+	mux.Handle("PATCH /api/v1/postgres-users/{id}", accounts(http.HandlerFunc(s.handlePostgresUser)))
+	mux.Handle("DELETE /api/v1/postgres-users/{id}", accounts(http.HandlerFunc(s.handlePostgresUser)))
+
+	// The account's own Redis cache.
+	mux.Handle("GET /api/v1/redis", s.requireAuth(http.HandlerFunc(s.handleRedis)))
+	mux.Handle("POST /api/v1/redis", accounts(http.HandlerFunc(s.handleRedis)))
+	mux.Handle("POST /api/v1/redis/{id}", accounts(http.HandlerFunc(s.handleRedisAction)))
+	mux.Handle("PATCH /api/v1/redis/{id}", accounts(http.HandlerFunc(s.handleRedisAction)))
+	mux.Handle("DELETE /api/v1/redis/{id}", accounts(http.HandlerFunc(s.handleRedisAction)))
 
 	// FTP logins.
 	mux.Handle("GET /api/v1/ftp", accounts(http.HandlerFunc(s.handleFTP)))

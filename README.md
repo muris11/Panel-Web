@@ -45,14 +45,19 @@ shells out.
 | Domains           | add a website (document root + nginx block + zone), edit PHP/HTTPS/docroot    |
 | Domain detail     | certificate issue/renew/remove, DNS records add/edit/delete                   |
 | Mail              | mail domains, mailboxes with generated passwords, forwarders, DKIM state      |
-| Databases         | databases and MySQL logins, grants, password reset, drop                     |
+| Databases         | MySQL databases and logins, grants, password reset, drop                      |
+| PostgreSQL        | PostgreSQL databases and logins, grants, password rotation, drop              |
+| Redis             | one cache instance per account, password rotation, memory ceiling, removal    |
 | FTP               | logins pinned to one account and folder, `$6$` crypt passwords                |
 | Files             | browse, read, write, mkdir, delete, compress and extract through the agent    |
 | Cron              | per-account jobs, applied as a whole crontab                                  |
 | Backups           | list archives from disk, start a backup, restore, delete                      |
 | Server (admin)    | service status/restart/reload, firewall rules, hostname and timezone          |
 | Activity          | the audit log of every change                                                 |
-| Settings          | sessions, two-factor enrolment with recovery codes, API tokens                |
+| Settings          | own name, email and password, sessions, two-factor with recovery codes, tokens |
+
+`SCOPE.md` is the honest inventory: what is covered, what is different on
+purpose, and what is still open.
 
 Two-factor works the Laravel way: the secret is written unconfirmed, signing in
 needs no code until the account proves it can generate one, and eight single-use

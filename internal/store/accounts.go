@@ -40,6 +40,16 @@ func (s *Store) SetUserName(ctx context.Context, id int64, name string) error {
 	return wrap("rename the account", err)
 }
 
+// SetUserEmail changes the address an account signs in with. The caller checks
+// that nobody else has it.
+func (s *Store) SetUserEmail(ctx context.Context, id int64, email string) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE users SET email = ?, email_verified_at = NULL, updated_at = ? WHERE id = ?`,
+		email, Now(), id)
+
+	return wrap("change the email address", err)
+}
+
 // CreatePanelUser inserts an administrator or reseller. These live only in
 // the panel: they have no Linux user, no home and nothing on the server, so
 // they are active immediately.
