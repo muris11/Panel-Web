@@ -56,6 +56,9 @@ const browser = spawn(
         '--hide-scrollbars',
         '--no-first-run',
         '--disable-gpu',
+        // A test server answers on a self-signed certificate; a browser that
+        // refuses it would only ever photograph the error page.
+        ...(BASE.startsWith('https:') ? ['--ignore-certificate-errors'] : []),
         'about:blank',
     ],
     { stdio: 'ignore' },

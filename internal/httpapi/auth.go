@@ -49,6 +49,10 @@ func (s *Server) handleSessionProbe(w http.ResponseWriter, r *http.Request) {
 					"authenticated": true,
 					"user":          payloadFor(user),
 					"csrfToken":     session.CSRFToken,
+					// The frame prints which agent answered. Without this the
+					// page falls back to the placeholder and claims a simulated
+					// agent on a server that is driving the real daemon.
+					"agent": s.agent.Name(),
 				})
 
 				return
