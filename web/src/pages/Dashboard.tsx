@@ -144,6 +144,26 @@ export function Dashboard() {
                         </div>
                     </Card>
                 ) : null}
+
+                {user.role === 'admin' ? (
+                    <Card>
+                        <CardHead title="Quick actions" />
+                        <div className="card-body row">
+                            <a className="btn" href="/accounts">
+                                New account
+                            </a>
+                            <a className="btn" href="/domains">
+                                New website
+                            </a>
+                            <a className="btn" href="/mail">
+                                New mailbox
+                            </a>
+                            <a className="btn" href="/databases">
+                                New database
+                            </a>
+                        </div>
+                    </Card>
+                ) : null}
                 </div>
 
                 <Card>
