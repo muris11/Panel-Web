@@ -68,6 +68,11 @@ type Config struct {
 	// Nameservers are the servers every new zone names. Empty means the same
 	// thing: the zone gets no NS rows and the panel asks for the setting.
 	Nameservers []string
+
+	// CollectInterval is how often the in-process collectors run (traffic,
+	// resources, certificate expiry). Zero turns them off, for a host that
+	// drives "muriscore-panel collect" from cron instead.
+	CollectInterval time.Duration
 }
 
 // Load reads the configuration and refuses one that cannot work.
@@ -83,6 +88,7 @@ func Load() (Config, error) {
 		SessionTTL:       duration("SESSION_TTL", 12*time.Hour),
 		SecureCookies:    boolSetting("SECURE_COOKIES", false),
 		PublicIP:         setting("PUBLIC_IP", ""),
+		CollectInterval:  interval("COLLECT_INTERVAL", 15*time.Minute),
 	}
 
 	for _, nameserver := range strings.Split(setting("NAMESERVERS", ""), ",") {
@@ -152,6 +158,20 @@ func duration(name string, fallback time.Duration) time.Duration {
 	}
 
 	return parsed
+}
+
+// interval reads a duration where "off", "none" and "0" mean "do not run".
+func interval(name string, fallback time.Duration) time.Duration {
+	value := strings.ToLower(strings.TrimSpace(setting(name, "")))
+
+	switch value {
+	case "":
+		return fallback
+	case "off", "none", "false", "0":
+		return 0
+	}
+
+	return duration(name, fallback)
 }
 
 func boolSetting(name string, fallback bool) bool {

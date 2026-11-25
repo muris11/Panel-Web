@@ -82,10 +82,11 @@ Honest list, roughly in the order that matters.
    panel installs beside it on `:2223`. Retiring the PHP panel means removing
    its queue worker, and only one panel may drain `tasks` at a time: Laravel
    encrypts `tasks.payload`, this panel writes plain JSON.
-4. **Scheduled work still lives in Laravel commands.** Bandwidth, resource and
-   quota collection, DNS sync, SSL expiry sync, alerts, drift and update checks
-   are `app/Console/Commands`. The panel reads their results
-   (`usage.bandwidth`, `system.info`, `quota.report`) but does not run them yet.
+4. **Some scheduled work still lives in Laravel commands.** Traffic, resources
+   and certificate expiry are collected by the panel itself now
+   (`internal/collector`, every fifteen minutes or `muriscore-panel collect`).
+   Quota application, DNS sync, alerts, drift and update checks are still
+   `app/Console/Commands` and are not run by this panel yet.
 5. **Not rebuilt**: reseller and hosting package editing (packages are read
    only), account import/transfer, announcements, tickets, branding, brute-force
    and WAF editing, mail queue, antivirus quarantine, server/system/remote
@@ -100,6 +101,11 @@ Honest list, roughly in the order that matters.
    syntax highlighting; a subdomain does not yet pick its parent zone in the
    drawer; mail has no quota or send-limit field; database size is only what the
    last collection run measured.
+
+## Licence
+
+AGPL-3.0, the same as the RAYXO server this panel drives. The repository was
+MIT when it only held a placeholder; that is corrected here.
 
 ## Hosts
 

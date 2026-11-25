@@ -6,6 +6,7 @@
 //	panel serve                    run the panel (the default)
 //	panel migrate                  apply the schema and exit
 //	panel create-admin <name> <email>
+//	panel collect                  run the collectors once and exit
 //	panel doctor                   report whether this host can run the panel
 //	panel version
 package main
@@ -22,6 +23,7 @@ import (
 
 	"muriscore/panel/internal/agent"
 	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/collector"
 	"muriscore/panel/internal/config"
 	"muriscore/panel/internal/db"
 	"muriscore/panel/internal/httpapi"
@@ -53,6 +55,8 @@ func main() {
 		err = migrate(logger)
 	case "create-admin":
 		err = createAdmin(logger, os.Args[2:])
+	case "collect":
+		err = collect(logger)
 	case "doctor":
 		err = doctor()
 	case "version", "-version", "--version":
@@ -77,6 +81,7 @@ func usage() {
   muriscore-panel serve                     run the panel (default)
   muriscore-panel migrate                   apply the schema and exit
   muriscore-panel create-admin <user> <email> [--password <password>]
+  muriscore-panel collect                   run the collectors once and exit
   muriscore-panel doctor                    report whether this host can run it
   muriscore-panel version
 
@@ -89,6 +94,7 @@ Environment (MURISCORE_* wins, RAYXO_* is still read for an older install):
   MURISCORE_SESSION_TTL     session lifetime (default 12h)
   MURISCORE_SECURE_COOKIES  true behind HTTPS (default false)
   MURISCORE_TRUSTED_PROXIES comma-separated addresses allowed to set X-Forwarded-For
+  MURISCORE_COLLECT_INTERVAL time between collector runs (default 15m, "off")
   MURISCORE_PUBLIC_IP       address new A records point at
   MURISCORE_NAMESERVERS     nameservers every new zone names
 `)
@@ -131,15 +137,7 @@ func serve(logger *slog.Logger, args []string) error {
 
 	defer closeDB()
 
-	var client agent.Agent
-
-	switch cfg.AgentDriver {
-	case "socket":
-		client = agent.NewSocketAgent(cfg.AgentSocket, cfg.AgentTimeout)
-	default:
-		client = agent.NewFake()
-		logger.Warn("the agent is simulated: no change reaches a server (MURISCORE_AGENT_DRIVER=fake)")
-	}
+	client := clientFor(cfg, logger)
 
 	logger.Info("panel starting", "version", version, "agent", client.Name())
 
@@ -150,9 +148,70 @@ func serve(logger *slog.Logger, args []string) error {
 		TaskTimeout: cfg.AgentTaskTimeout,
 	}).Start(ctx)
 
+	// The collectors replace the Laravel scheduler: traffic, resources and
+	// certificate expiry are kept current by the panel itself, so a host that
+	// runs only this binary needs no queue worker and no timer.
+	if cfg.CollectInterval > 0 {
+		go runCollectors(ctx, logger, st, client, cfg.CollectInterval)
+	}
+
 	server := httpapi.New(cfg, st, client, logger)
 
 	return server.Run(ctx)
+}
+
+// collect runs the collectors once, for a host that prefers cron to a
+// goroutine. It exits non-zero when a job failed, so cron mails someone.
+func collect(logger *slog.Logger) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	cfg, st, closeDB, err := open(ctx, logger)
+	if err != nil {
+		return err
+	}
+
+	defer closeDB()
+
+	client := clientFor(cfg, logger)
+
+	return collector.New(st, client, logger).Run(ctx)
+}
+
+// clientFor returns the agent the rest of the process uses.
+func clientFor(cfg config.Config, logger *slog.Logger) agent.Agent {
+	if cfg.AgentDriver == "socket" {
+		return agent.NewSocketAgent(cfg.AgentSocket, cfg.AgentTimeout)
+	}
+
+	logger.Warn("the agent is simulated: no change reaches a server (MURISCORE_AGENT_DRIVER=fake)")
+
+	return agent.NewFake()
+}
+
+// runCollectors runs once at start and then on a timer. It waits for the first
+// tick rather than running immediately, so a panel that starts during a
+// database restore does not read a half-written schema.
+func runCollectors(ctx context.Context, logger *slog.Logger, st *store.Store, client agent.Agent, every time.Duration) {
+	ticker := time.NewTicker(every)
+	defer ticker.Stop()
+
+	work := collector.New(st, client, logger)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			runCtx, cancel := context.WithTimeout(ctx, every)
+
+			if err := work.Run(runCtx); err != nil {
+				logger.Warn("a collector run had failures", "error", err)
+			}
+
+			cancel()
+		}
+	}
 }
 
 func migrate(logger *slog.Logger) error {

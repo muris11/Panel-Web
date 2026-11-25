@@ -69,9 +69,24 @@ export function Server({ onToast }: { onToast: (message: string, tone?: 'ok' | '
     const settings = page?.settings ?? {};
 
     const bandwidth = usage?.bandwidth as
-        | { month?: string; usage?: { total_gb?: number; in_gb?: number; out_gb?: number } }
+        | { month?: string; total_bytes?: number; web_bytes?: number; mail_bytes?: number; ftp_bytes?: number }
         | null
         | undefined;
+
+    const collected = (usage?.collectors ?? []) as {
+        job?: string;
+        finished_at?: string;
+        ok?: boolean;
+        detail?: string;
+    }[];
+
+    const size = (bytes: number) => {
+        if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+        if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+        if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+
+        return `${bytes} B`;
+    };
 
     return (
         <div className="page">
@@ -209,23 +224,32 @@ export function Server({ onToast }: { onToast: (message: string, tone?: 'ok' | '
                 <Card>
                     <CardHead title="Bandwidth" />
                     <div className="card-body">
-                        {bandwidth?.usage ? (
-                            <>
-                                <p className="muted">This month ({bandwidth.month})</p>
-                                <dl className="kv">
-                                    <dt>Total</dt>
-                                    <dd>{(bandwidth.usage.total_gb ?? 0).toFixed(1)} GB</dd>
-                                    <dt>In</dt>
-                                    <dd>{(bandwidth.usage.in_gb ?? 0).toFixed(1)} GB</dd>
-                                    <dt>Out</dt>
-                                    <dd>{(bandwidth.usage.out_gb ?? 0).toFixed(1)} GB</dd>
-                                </dl>
-                                <p className="muted" style={{ marginBottom: 0, fontSize: 12 }}>
-                                    The agent reports totals without a plan ceiling, so no bar is drawn.
-                                </p>
-                            </>
+                        <p className="muted">This month ({bandwidth?.month ?? '—'})</p>
+                        <dl className="kv">
+                            <dt>Total</dt>
+                            <dd>{size(bandwidth?.total_bytes ?? 0)}</dd>
+                            <dt>Web</dt>
+                            <dd>{size(bandwidth?.web_bytes ?? 0)}</dd>
+                            <dt>Mail</dt>
+                            <dd>{size(bandwidth?.mail_bytes ?? 0)}</dd>
+                            <dt>FTP</dt>
+                            <dd>{size(bandwidth?.ftp_bytes ?? 0)}</dd>
+                        </dl>
+                        {collected.length > 0 ? (
+                            <p className="muted" style={{ marginBottom: 0, fontSize: 12 }}>
+                                {collected.some((run) => run.ok === false)
+                                    ? 'The last collection reported a problem; the numbers may be behind.'
+                                    : `Counted from the server logs. Last update ${
+                                          collected[0]?.finished_at
+                                              ? new Date(collected[0].finished_at).toLocaleString()
+                                              : 'just now'
+                                      }.`}
+                            </p>
                         ) : (
-                            <p className="muted">The agent does not report bandwidth on this server yet.</p>
+                            <p className="muted" style={{ marginBottom: 0, fontSize: 12 }}>
+                                No collection has run yet. It runs every fifteen minutes, or on demand
+                                with <code>muriscore-panel collect</code>.
+                            </p>
                         )}
                     </div>
                 </Card>

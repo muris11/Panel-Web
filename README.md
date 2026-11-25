@@ -20,17 +20,18 @@ browser ──HTTPS──▶ muriscore-panel ──JSON-RPC over a unix socket�
 
 | Path                | What it is                                                      |
 | ------------------- | --------------------------------------------------------------- |
-| `cmd/panel`         | the binary: `serve`, `migrate`, `create-admin`, `doctor`, `version` |
+| `cmd/panel`         | the binary: `serve`, `migrate`, `create-admin`, `collect`, `doctor`, `version` |
 | `internal/httpapi`  | JSON API under `/api/v1`, sessions, CSRF, the SPA fallback       |
 | `internal/store`    | every SQL statement, written out; no query builder               |
 | `internal/agent`    | JSON-RPC client for `rayxod`, plus a fake driver for development  |
 | `internal/worker`   | claims queued tasks, calls the agent, writes the result back     |
+| `internal/collector`| scheduled traffic, resource and certificate accounting           |
 | `internal/auth`     | bcrypt (reads PHP `$2y$`), TOTP, `$6$` crypt, APP_KEY crypto     |
 | `internal/rules`    | what a username, domain, email and password may be               |
 | `internal/db`       | pool, embedded schema, migration runner                          |
 | `internal/web`      | the built SPA, embedded with `go:embed`                          |
 | `web`               | React 19 + Vite sources for that SPA                             |
-| `deploy`            | installer, systemd unit, Nginx site                              |
+| `deploy`            | installer, uninstaller, systemd unit, Nginx site                 |
 | `SCOPE.md`          | what is covered, what differs on purpose, what is still open     |
 
 ## What it can do
@@ -55,6 +56,21 @@ out.
 | Server         | service status/restart/reload, firewall rules, hostname and timezone          |
 | Activity       | the audit log of every change                                                 |
 | Settings       | own name, email and password, sessions, two-factor, API tokens                |
+
+Behind those screens the panel does its own scheduled work, so a host that runs
+only this binary needs no PHP scheduler:
+
+| Collector     | What it keeps current                                                         |
+| ------------- | ----------------------------------------------------------------------------- |
+| `bandwidth`   | traffic per account and per website per day, from the agent's log cursor       |
+| `resources`   | CPU milliseconds and peak memory per account per day                           |
+| `ssl_expiry`  | when each website's certificate expires, so certbot renewals show up           |
+
+They run every fifteen minutes inside the panel (`MURISCORE_COLLECT_INTERVAL`),
+record the outcome of each run in `collector_runs`, and can be driven once by
+hand or from cron with `muriscore-panel collect`. Bandwidth is counted from a
+cursor the agent returns: the bytes and the cursor are written in one
+transaction, so a crash re-reads a log instead of losing it.
 
 Two-factor works the Laravel way: the secret is written unconfirmed, signing in
 needs no code until the account proves it can generate one, and eight single-use
@@ -137,6 +153,7 @@ an installation from before the rename keeps its env file.
 | `MURISCORE_TRUSTED_PROXIES`  | —                       | comma-separated addresses allowed to set `X-Forwarded-For` |
 | `MURISCORE_PUBLIC_IP`        | —                       | written into new zones' A records                          |
 | `MURISCORE_NAMESERVERS`      | —                       | comma separated, the NS rows every new zone gets           |
+| `MURISCORE_COLLECT_INTERVAL` | `15m`                   | collectors run this often; `off` disables them             |
 
 `MURISCORE_APP_KEY` matters for one thing: the Laravel panel stored
 `users.two_factor_secret` encrypted with its `APP_KEY`. Without the key those
@@ -168,6 +185,16 @@ The installer:
 
 `--print-only` shows every step without changing anything; `--no-nginx` stops
 after the service. Both are safe on a host where only the binary should change.
+
+To take it off again:
+
+```sh
+sudo ./deploy/uninstall.sh             # service, site, binary; keeps /etc/muriscore
+sudo ./deploy/uninstall.sh --purge     # also removes the env file and certificate
+```
+
+It leaves MariaDB, `rayxod`, the hosting accounts and the panel's tables alone,
+because another panel may still be reading them.
 
 `deploy/muriscore-panel.service` and `deploy/nginx.conf` are the files it
 installs and work on their own too. The parts that matter:
@@ -254,4 +281,4 @@ Both need a running panel and `MURISCORE_PASSWORD` (or `RAYXO_PASSWORD`).
 
 ## Licence
 
-AGPL-3.0, the same as the RAYXO server it drives.
+AGPL-3.0, the same as the RAYXO server it drives. See `LICENSE`.

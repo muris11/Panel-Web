@@ -195,19 +195,6 @@ function safeJSON(text: string): unknown {
     }
 }
 
-/** Reads a cookie value, used once: the pre-session CSRF token. */
-export function readCookie(name: string): string {
-    for (const part of document.cookie.split(';')) {
-        const [key, ...rest] = part.trim().split('=');
-
-        if (key === name) {
-            return decodeURIComponent(rest.join('='));
-        }
-    }
-
-    return '';
-}
-
 /** Formats an ISO timestamp the way the panel shows dates. */
 export function when(value: string | null | undefined): string {
     if (!value) {

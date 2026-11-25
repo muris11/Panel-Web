@@ -1,9 +1,11 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"muriscore/panel/internal/rules"
 	"muriscore/panel/internal/store"
@@ -191,27 +193,71 @@ func (s *Server) handleServerSettings(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"hostname": request.Hostname, "timezone": request.Timezone})
 }
 
-// handleUsage reports bandwidth and resource usage for the accounts a caller
-// may see.
+// visibleAccountIDs returns the accounts whose traffic a caller may add up: nil
+// for an administrator (every account), otherwise the accounts they own. It is
+// nil rather than an empty slice on purpose, because nil means "no filter".
+func (s *Server) visibleAccountIDs(ctx context.Context, caller store.User) ([]int64, error) {
+	if caller.IsAdmin() {
+		return nil, nil
+	}
+
+	return s.store.AccountIDsOwnedBy(ctx, caller.ID)
+}
+
+// handleUsage reports the traffic the collectors counted this month and the
+// live resource reading of the agent.
+//
+// The bandwidth numbers come from the panel's own table, not from the agent:
+// usage.bandwidth is a log cursor that returns what moved since the previous
+// count, so asking it for "the month" would return an empty slice right after a
+// count. The panel is the only thing that adds those slices up.
 func (s *Server) handleUsage(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.caller(w, r); !ok {
+	caller, ok := s.caller(w, r)
+	if !ok {
 		return
 	}
 
-	bandwidth, bandwidthErr := s.agentRaw(r, "usage.bandwidth", map[string]any{})
-	resources, _ := s.agentRaw(r, "usage.resources", map[string]any{})
+	owned, err := s.visibleAccountIDs(r.Context(), caller)
+	if err != nil {
+		s.failStore(w, r, err)
+
+		return
+	}
+
+	month, err := s.store.MonthBandwidth(r.Context(), time.Now(), owned)
+	if err != nil {
+		s.failStore(w, r, err)
+
+		return
+	}
+
+	runs, err := s.store.CollectorRuns(r.Context())
+	if err != nil {
+		s.failStore(w, r, err)
+
+		return
+	}
+
+	resources, resourcesErr := s.agentRaw(r, "usage.resources", map[string]any{})
 	quota, _ := s.agentRaw(r, "quota.report", map[string]any{})
 
 	problems := map[string]string{}
 
-	if bandwidthErr != nil {
-		problems["bandwidth"] = bandwidthErr.Error()
+	if resourcesErr != nil {
+		problems["resources"] = resourcesErr.Error()
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"bandwidth": bandwidth,
-		"resources": resources,
-		"quota":     quota,
-		"problems":  problems,
+		"bandwidth": map[string]any{
+			"month":       time.Now().Format("2006-01"),
+			"total_bytes": month.Bytes,
+			"web_bytes":   month.Web,
+			"mail_bytes":  month.Mail,
+			"ftp_bytes":   month.FTP,
+		},
+		"collectors": runs,
+		"resources":  resources,
+		"quota":      quota,
+		"problems":   problems,
 	})
 }

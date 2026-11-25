@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"muriscore/panel/internal/auth"
 	"muriscore/panel/internal/store"
@@ -828,5 +829,43 @@ func TestProfileChangeAndPasswordRotateSessions(t *testing.T) {
 
 	if other := signInAs(t, server, st, "admin@example.test", "rahasia123"); other != nil {
 		t.Fatal("the old password still signs in")
+	}
+}
+
+// The server page must show the traffic the panel counted, because the agent's
+// usage.bandwidth answers "what moved since this cursor" and would look empty
+// right after a count.
+func TestUsageShowsCollectedTraffic(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	accountID := provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	day := time.Now().UTC().Format("2006-01-02")
+
+	if err := st.RecordBandwidth(context.Background(),
+		[]store.Accounting{{UserID: accountID, Date: day, Web: 3 << 20, Mail: 1 << 20, FTP: 512 << 10}},
+		nil, nil); err != nil {
+		t.Fatalf("record bandwidth: %v", err)
+	}
+
+	answer := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/usage", nil, "")
+	if answer.Status != http.StatusOK {
+		t.Fatalf("reading usage answered %d: %v", answer.Status, answer.Body)
+	}
+
+	bandwidth, _ := answer.Body["bandwidth"].(map[string]any)
+
+	total, _ := bandwidth["total_bytes"].(float64)
+	if total != 4.5*1024*1024 {
+		t.Errorf("total_bytes = %v, want %v", total, 4.5*1024*1024)
+	}
+
+	if bandwidth["month"] != time.Now().UTC().Format("2006-01") {
+		t.Errorf("month = %v", bandwidth["month"])
+	}
+
+	if _, ok := answer.Body["collectors"]; !ok {
+		t.Error("the answer has no collectors list, so the page cannot say how fresh it is")
 	}
 }

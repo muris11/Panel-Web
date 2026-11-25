@@ -141,17 +141,26 @@ func (f *Fake) Call(_ context.Context, method string, params any) (json.RawMessa
 		answer = map[string]any{"enabled": true, "blocked": []any{}, "simulated": true}
 
 	case "usage.bandwidth":
+		// The real shape: what moved since the cursor the caller passed. An
+		// empty count with a complete cursor is what a quiet server answers,
+		// and it is what the collector must cope with.
 		answer = map[string]any{
-			"month":     time.Now().Format("2006-01"),
-			"usage":     map[string]any{"total_gb": 12.5, "in_gb": 8.1, "out_gb": 4.4},
-			"simulated": true,
+			"web":       []any{},
+			"mail":      []any{},
+			"mail_user": []any{},
+			"ftp":       []any{},
+			"cursor":    map[string]any{},
+			"complete":  true,
 		}
 
 	case "usage.resources":
-		answer = map[string]any{"cpu_percent": 12.0, "memory_mb": 3072, "simulated": true}
+		answer = map[string]any{"accounts": []any{}}
+
+	case "ssl.expiry":
+		answer = map[string]any{"expires_at": map[string]any{}}
 
 	case "quota.report":
-		answer = map[string]any{"accounts": []any{}, "simulated": true}
+		answer = map[string]any{"enabled": true, "filesystem": "/home", "accounts": []any{}}
 
 	case "dns.sync_zone":
 		zone, _ := values["zone"].(string)

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
-import { api, ApiError, readCookie, setCSRFToken, type User } from '../api';
+import { api, ApiError, setCSRFToken, type User } from '../api';
 import { Button, errorMessage, Field } from '../ui';
 
 /**
@@ -34,7 +34,6 @@ export function Login({
                 {
                     method: 'POST',
                     body: { login, password, totp: code },
-                    csrf: readCookie('muriscore_csrf'),
                 },
             );
 
