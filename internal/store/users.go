@@ -241,12 +241,13 @@ func (s *Store) SetRecoveryCodes(ctx context.Context, id int64, recoveryCodes st
 	return wrap("store the recovery codes", err)
 }
 
-// accountColumns are appended after userColumns when reading a list.
-const accountColumns = `p.id, p.name, p.description, p.disk_mb, p.bandwidth_mb,
-	p.domains, p.databases, p.email_accounts, p.ftp_accounts, p.cron_jobs,
-	p.subdomains, p.email_forwarders, p.inodes,
-	(SELECT COUNT(*) FROM domains d WHERE d.user_id = u.id),
-	COALESCE(o.username, '')`
+// accountColumns are appended after userColumns when reading a list. Column
+// names MariaDB reserves are backticked; a raw string cannot carry one.
+const accountColumns = "p.id, p.name, p.description, p.disk_mb, p.bandwidth_mb, " +
+	"p.domains, p.`databases`, p.email_accounts, p.ftp_accounts, p.cron_jobs, " +
+	"p.subdomains, p.email_forwarders, p.inodes, " +
+	"(SELECT COUNT(*) FROM domains d WHERE d.user_id = u.id), " +
+	"COALESCE(o.username, '')"
 
 // ListAccounts returns the hosting accounts an owner manages: an
 // administrator sees every account, a reseller only the ones it owns.
@@ -412,9 +413,10 @@ func (s *Store) EmailTaken(ctx context.Context, email string, exceptID int64) (b
 
 // Packages lists the packages an owner may hand out.
 func (s *Store) Packages(ctx context.Context, owner *User) ([]Package, error) {
-	query := `SELECT id, name, description, disk_mb, bandwidth_mb, domains, databases,
-		email_accounts, ftp_accounts, cron_jobs, subdomains, email_forwarders, inodes
-		FROM packages`
+	query := "SELECT id, name, description, disk_mb, bandwidth_mb, domains, `databases`, " +
+		"email_accounts, ftp_accounts, cron_jobs, subdomains, email_forwarders, inodes " +
+		"FROM `packages`"
+
 	args := []any{}
 
 	if owner != nil && !owner.IsAdmin() {

@@ -77,14 +77,18 @@ export function Dashboard() {
                     label="Queued work"
                     value={stats?.tasksQueued}
                     foot={stats?.tasksFailed ? `${stats.tasksFailed} failed recently` : 'nothing failing'}
-                    tone={stats?.tasksFailed ? 'bad' : undefined}
+                    tone={stats?.tasksQueued ? 'bad' : undefined}
                 />
             </div>
 
-            <div className="grid-2">
+            {/* The left column carries two cards, so the row ends level with the
+               activity list instead of leaving a hole under the short one. */}
+            <div className="grid-2 top">
+                <div className="stack">
                 <Card>
                     <CardHead title="Server">
-                        {system?.hostname ? <span className="muted mono">{system.hostname}</span> : null}                    </CardHead>
+                        {system?.hostname ? <span className="muted mono">{system.hostname}</span> : null}
+                    </CardHead>
                     <div className="card-body">
                         {system ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -124,6 +128,22 @@ export function Dashboard() {
                     </div>
                 </Card>
 
+                {user.role === 'admin' ? (
+                    <Card>
+                        <CardHead title="Resellers" />
+                        <div className="card-body row" style={{ justifyContent: 'space-between' }}>
+                            <span className="muted">
+                                {stats?.resellers ?? 0} reseller{stats?.resellers === 1 ? '' : 's'} manage their
+                                own accounts on this server.
+                            </span>
+                            <a className="btn sm" href="/accounts">
+                                View accounts
+                            </a>
+                        </div>
+                    </Card>
+                ) : null}
+                </div>
+
                 <Card>
                     <CardHead title="Recent activity">
                         <a className="btn sm ghost" href="/activity">
@@ -159,21 +179,6 @@ export function Dashboard() {
                     )}
                 </Card>
             </div>
-
-            {user.role === 'admin' ? (
-                <Card>
-                    <CardHead title="Resellers" />
-                    <div className="card-body row" style={{ justifyContent: 'space-between' }}>
-                        <span className="muted">
-                            {stats?.resellers ?? 0} reseller{stats?.resellers === 1 ? '' : 's'} manage their own
-                            accounts on this server.
-                        </span>
-                        <a className="btn sm" href="/accounts">
-                            View accounts
-                        </a>
-                    </div>
-                </Card>
-            ) : null}
         </div>
     );
 }

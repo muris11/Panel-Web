@@ -146,6 +146,7 @@ export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' |
                                                 {account.status === 'suspended' ? (
                                                     <Button
                                                         size="sm"
+                                                        variant="ghost"
                                                         busy={busy === account.username}
                                                         onClick={() => void act(account, 'unsuspend')}
                                                     >
@@ -154,13 +155,14 @@ export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' |
                                                 ) : (
                                                     <Button
                                                         size="sm"
+                                                        variant="ghost"
                                                         busy={busy === account.username}
                                                         onClick={() => void act(account, 'suspend')}
                                                     >
                                                         Suspend
                                                     </Button>
                                                 )}
-                                                <a className="btn sm ghost" {...linkProps(`/accounts/${account.username}`)}>
+                                                <a className="btn sm" {...linkProps(`/accounts/${account.username}`)}>
                                                     Open
                                                 </a>
                                             </div>
