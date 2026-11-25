@@ -10,7 +10,7 @@ import (
 )
 
 // Fake answers the agent methods the panel uses without touching a server,
-// so the panel runs on a laptop that has no rayxod. Every answer carries
+// so the panel runs on a laptop that has no muriscored. Every answer carries
 // "simulated": true, which the panel shows in the interface.
 //
 // It is also what the HTTP tests run against: the point of the fake is that

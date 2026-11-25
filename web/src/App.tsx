@@ -17,6 +17,7 @@ import { FTP } from './pages/FTP';
 import { Ssh } from './pages/Ssh';
 import { Tickets } from './pages/Tickets';
 import { Announcements } from './pages/Announcements';
+import { Packages } from './pages/Packages';
 import { Login } from './pages/Login';
 import { Mail } from './pages/Mail';
 import { Postgres } from './pages/Postgres';
@@ -171,6 +172,10 @@ function Screen({ path, onToast }: { path: string; onToast: (message: string, to
 
     if (path === '/server') {
         return <Server onToast={onToast} />;
+    }
+
+    if (path === '/packages') {
+        return <Packages role={user.role} onToast={onToast} />;
     }
 
     if (path === '/tickets') {

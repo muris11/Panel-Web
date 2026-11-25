@@ -10,7 +10,7 @@ to guess from the file list.
 
 Every row here is checked by a test in `internal/httpapi` or `internal/store`
 unless it says otherwise. "Agent" is the private call the panel makes over
-`/run/rayxo/agent.sock`; the panel never shells out.
+`/run/muriscore/agent.sock`; the panel never shells out.
 
 ## Accounts and people
 
@@ -47,6 +47,7 @@ unless it says otherwise. "Agent" is the private call the panel makes over
 | Server (admin): services, firewall rules, hostname, timezone, bandwidth | `system.go` | `service.*`, `firewall.status`, `system.*`, `usage.bandwidth` |
 | Tickets between an account and whoever answers it | `support.go` | none |
 | Announcements to a role, or to a reseller's own accounts | `support.go` | none |
+| Hosting packages: create, edit, delete; quota and shell re-applied on change | `packages.go` | `account.set_quota`, `account.set_ssh` |
 
 ## Deliberate differences from the Laravel panel
 
@@ -71,7 +72,7 @@ These are choices, not gaps.
 
 Honest list, roughly in the order that matters.
 
-1. **The socket driver has not talked to a real `rayxod` yet.** The protocol is
+1. **The socket driver has not talked to a real `muriscored` yet.** The protocol is
    tested against a real Unix socket in `internal/agent/agent_test.go` (framing,
    JSON-RPC ids, refusals with a reason, a null-id rejection, a missing socket),
    but a Linux box with the daemon running is still the proof.
@@ -96,8 +97,8 @@ Honest list, roughly in the order that matters.
    (`internal/collector`, every fifteen minutes or `muriscore-panel collect`).
    Quota application, DNS sync, alerts, drift and update checks are still
    `app/Console/Commands` and are not run by this panel yet.
-6. **Not rebuilt**: reseller and hosting package editing (packages are read
-   only), account import/transfer, ticket attachments, the email that an
+6. **Not rebuilt**: reseller package editing (a reseller's own ceiling is set by
+   an administrator's `reseller_packages` row), account import/transfer, ticket attachments, the email that an
    announcement would send (`emailed` is recorded, no mail is dispatched),
    branding, brute-force and WAF editing, mail queue, antivirus quarantine,
    server/system/remote backup schedules and retention, statistics and login
@@ -114,7 +115,7 @@ Honest list, roughly in the order that matters.
 
 ## Licence
 
-AGPL-3.0, the same as the RAYXO server this panel drives. The repository was
+AGPL-3.0, the same as the agent this panel drives. The repository was
 MIT when it only held a placeholder; that is corrected here.
 
 ## Hosts

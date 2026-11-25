@@ -23,19 +23,16 @@ import (
 )
 
 // These tests need a real MySQL/MariaDB, because the store's SQL is written
-// for one. Point MURISCORE_TEST_DSN (or the older RAYXO_TEST_DSN) at a
+// for one. Point MURISCORE_TEST_DSN at a
 // throwaway database whose name ends in
 // _test; the tests empty it. Without it they skip, so `go test ./...` works on
 // a machine with no database.
 //
-//	MURISCORE_TEST_DSN='root@tcp(127.0.0.1:3307)/rayxo_test?parseTime=true&loc=UTC' go test ./...
+//	MURISCORE_TEST_DSN='root@tcp(127.0.0.1:3307)/muriscore_test?parseTime=true&loc=UTC' go test ./...
 func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 	t.Helper()
 
 	dsn := os.Getenv("MURISCORE_TEST_DSN")
-	if dsn == "" {
-		dsn = os.Getenv("RAYXO_TEST_DSN")
-	}
 	if dsn == "" {
 		t.Skip("set MURISCORE_TEST_DSN to run the panel's database tests")
 	}
@@ -102,7 +99,7 @@ func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 	}
 
 	logOut := io.Writer(io.Discard)
-	if os.Getenv("RAYXO_TEST_VERBOSE") != "" {
+	if os.Getenv("MURISCORE_TEST_VERBOSE") != "" {
 		logOut = os.Stderr
 	}
 

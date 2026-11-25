@@ -130,12 +130,12 @@ func binaryAny(names []string, why string) check {
 	return check{names[0], "warn", "not installed — " + why}
 }
 
-// agentSocket checks the socket rayxod listens on and whether this user may
+// agentSocket checks the socket muriscored listens on and whether this user may
 // open it.
 func agentSocket(path string) check {
 	info, err := os.Stat(path)
 	if err != nil {
-		return check{"agent socket", "fail", path + " does not exist; is rayxod running?"}
+		return check{"agent socket", "fail", path + " does not exist; is muriscored running?"}
 	}
 
 	if info.Mode()&os.ModeSocket == 0 {
@@ -197,9 +197,9 @@ func configDirectory() check {
 // panelUser reports who will run the service, which is what the unit file names.
 func panelUser() check {
 	name := "muriscore"
-	if current, err := user.Lookup("rayxo"); err == nil && current != nil {
+	if current, err := user.Lookup("muriscore"); err == nil && current != nil {
 		// An upgraded host keeps the old account, and that is fine.
-		name = "rayxo"
+		name = "muriscore"
 	}
 
 	found, err := user.Lookup(name)

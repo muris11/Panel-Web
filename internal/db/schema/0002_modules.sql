@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS `dns_records` (
 CREATE TABLE IF NOT EXISTS `mail_domains` (
     `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `domain_id` BIGINT UNSIGNED NOT NULL,
-    `dkim_selector` VARCHAR(63) NOT NULL DEFAULT 'rayxo',
+    `dkim_selector` VARCHAR(63) NOT NULL DEFAULT 'muriscore',
     `dkim_public_key` TEXT NULL,
     `catchall_target` VARCHAR(254) NULL,
     `mode` VARCHAR(8) NOT NULL DEFAULT 'local',

@@ -58,7 +58,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// The agent's numbers are worth showing but not worth failing the page
-	// for: a panel that cannot reach rayxod should still say how many
+	// for: a panel that cannot reach muriscored should still say how many
 	// accounts it has, and say plainly that the server is unreachable.
 	system, agentErr := s.systemInfo(r)
 
@@ -149,42 +149,6 @@ func (s *Server) handleTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"tasks": payload, "limit": limit, "offset": offset})
-}
-
-// handlePackages lists the plans the caller may hand out.
-func (s *Server) handlePackages(w http.ResponseWriter, r *http.Request) {
-	user, ok := userFrom(r.Context())
-	if !ok {
-		fail(w, http.StatusUnauthorized, codeUnauthorized, "Sign in to continue.")
-
-		return
-	}
-
-	packages, err := s.store.Packages(r.Context(), &user)
-	if err != nil {
-		s.failStore(w, r, err)
-
-		return
-	}
-
-	payload := make([]map[string]any, 0, len(packages))
-	for _, pkg := range packages {
-		payload = append(payload, map[string]any{
-			"id":            pkg.ID,
-			"name":          pkg.Name,
-			"description":   pkg.Description,
-			"diskMb":        pkg.DiskMB,
-			"bandwidthMb":   pkg.BandwidthMB,
-			"domains":       pkg.Domains,
-			"databases":     pkg.Databases,
-			"emailAccounts": pkg.EmailAccounts,
-			"ftpAccounts":   pkg.FTPAccounts,
-			"cronJobs":      pkg.CronJobs,
-			"subdomains":    pkg.Subdomains,
-		})
-	}
-
-	writeJSON(w, http.StatusOK, map[string]any{"packages": payload})
 }
 
 // handleHealth is what a load balancer or a backup script pings: it says the

@@ -111,6 +111,7 @@ func (u User) HasTwoFactor() bool {
 // Package is a hosting plan's limits. A nil limit means unlimited.
 type Package struct {
 	ID          int64
+	OwnerID     *int64
 	Name        string
 	Description string
 
@@ -124,6 +125,15 @@ type Package struct {
 	Subdomains     *int64
 	EmailForwarder *int64
 	Inodes         *int64
+	Pointers       *int64
+
+	SSL bool
+	CGI bool
+	SSH bool
+
+	// Accounts is how many hosting accounts sit on the package; it is filled
+	// by the listing, not by the row itself.
+	Accounts int64
 }
 
 // Account is a hosting account as the accounts page shows it: the user row

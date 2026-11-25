@@ -6,7 +6,7 @@ import (
 )
 
 func TestUsername(t *testing.T) {
-	valid := []string{"budi", "a12", "siti9", "rayxocustomer"}
+	valid := []string{"budi", "a12", "siti9", "coreuser"}
 	for _, name := range valid {
 		if err := Username(name); err != nil {
 			t.Errorf("Username(%q) rejected a valid name: %v", name, err)
@@ -25,6 +25,8 @@ func TestUsername(t *testing.T) {
 		"nginx",                // reserved service account
 		"information",          // would claim information_schema's prefix
 		"docker",               // privileged group
+		"muriscore",            // the panel's own login
+		"muriscored",           // the agent's own login
 	}
 
 	for _, name := range invalid {

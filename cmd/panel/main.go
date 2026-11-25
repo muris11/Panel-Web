@@ -85,11 +85,11 @@ func usage() {
   muriscore-panel doctor                    report whether this host can run it
   muriscore-panel version
 
-Environment (MURISCORE_* wins, RAYXO_* is still read for an older install):
+Environment (MURISCORE_* wins, MURISCORE_* is still read for an older install):
   MURISCORE_LISTEN          address to serve on (default 127.0.0.1:8080)
   MURISCORE_DB_DSN          MariaDB DSN, required (include parseTime=true&loc=UTC)
   MURISCORE_AGENT_DRIVER    socket | fake (default fake)
-  MURISCORE_AGENT_SOCKET    rayxod socket (default /run/rayxo/agent.sock)
+  MURISCORE_AGENT_SOCKET    muriscored socket (default /run/muriscore/agent.sock)
   MURISCORE_APP_KEY         the Laravel APP_KEY, to read encrypted 2FA secrets
   MURISCORE_SESSION_TTL     session lifetime (default 12h)
   MURISCORE_SECURE_COOKIES  true behind HTTPS (default false)

@@ -116,6 +116,15 @@ export function IconKey({ className = 'nav-icon' }: IconProps) {
     );
 }
 
+export function IconPackage({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <path d="M12 3 20 7v10l-8 4-8-4V7z" />
+            <path d="M4 7l8 4 8-4M12 11v10" />
+        </svg>
+    );
+}
+
 export function IconTicket({ className = 'nav-icon' }: IconProps) {
     return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>

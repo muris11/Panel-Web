@@ -10,6 +10,7 @@ import {
     IconGlobe,
     IconKey,
     IconTicket,
+    IconPackage,
     IconMegaphone,
     IconMail,
     IconServer,
@@ -47,6 +48,9 @@ export function Shell({ children }: { children: ReactNode }) {
         ...hosting,
         { to: '/files', label: 'Files', icon: <IconFolder /> },
         ...(user.role === 'admin' ? [{ to: '/server', label: 'Server', icon: <IconServer /> }] : []),
+        ...(user.role === 'admin' || user.role === 'reseller'
+            ? [{ to: '/packages', label: 'Packages', icon: <IconPackage /> }]
+            : []),
         { to: '/announcements', label: 'Announcements', icon: <IconMegaphone /> },
         { to: '/tickets', label: 'Support', icon: <IconTicket /> },
         { to: '/activity', label: 'Activity', icon: <IconActivity /> },
@@ -88,7 +92,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 <div className="sidebar-foot">
                     <span className="agent-line">
                         <span className={`dot ${agent === 'socket' ? '' : 'sim'}`} />
-                        {agent === 'socket' ? 'rayxod connected' : 'simulated agent'}
+                        {agent === 'socket' ? 'muriscored connected' : 'simulated agent'}
                     </span>
 
                     <div className="who">

@@ -109,10 +109,10 @@ fi
 
 say "left alone on purpose"
 note "the muriscore account, its home and any database rows"
-note "rayxod, MariaDB, Nginx and every hosting account"
+note "muriscored, MariaDB, Nginx and every hosting account"
 
 printf '\n'
 printf '  The host is back to whatever else is installed on it.\n'
 printf '  If another panel was disabled while this one ran, enable it again:\n'
-printf '    systemctl enable --now rayxo-queue.service rayxo-scheduler.timer\n'
+printf '    systemctl enable --now muriscore-queue.service muriscore-scheduler.timer\n'
 printf '\n'

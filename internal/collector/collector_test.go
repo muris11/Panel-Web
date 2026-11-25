@@ -24,9 +24,6 @@ func harness(t *testing.T) (*store.Store, *sql.DB) {
 	t.Helper()
 
 	dsn := os.Getenv("MURISCORE_TEST_DSN")
-	if dsn == "" {
-		dsn = os.Getenv("RAYXO_TEST_DSN")
-	}
 
 	if dsn == "" {
 		t.Skip("set MURISCORE_TEST_DSN to run the collector's database tests")
@@ -143,7 +140,7 @@ func TestBandwidthIsChargedToTheOwnerAndTheWebsite(t *testing.T) {
 			"mail":      [{"domain": "siti.test", "date": "2026-02-10", "bytes": 500}],
 			"mail_user": [{"user": "siti", "date": "2026-02-10", "bytes": 100}],
 			"ftp":       [{"user": "siti_ftp", "date": "2026-02-10", "bytes": 250}],
-			"cursor":    {"web:/var/log/rayxo/domains/siti.test.access.log": {"inode": 7, "offset": 900}},
+			"cursor":    {"web:/var/log/muriscore/domains/siti.test.access.log": {"inode": 7, "offset": 900}},
 			"complete":  true
 		}`,
 	}}

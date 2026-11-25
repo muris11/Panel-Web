@@ -110,7 +110,7 @@ export function Login({
                 <div className="auth-foot">
                     <span className="agent-line">
                         <span className={`dot ${agent === 'socket' ? '' : 'sim'}`} />
-                        {agent === 'socket' ? 'Connected to rayxod' : 'Simulated agent — no server changes'}
+                        {agent === 'socket' ? 'Connected to muriscored' : 'Simulated agent — no server changes'}
                     </span>
                     <span>MurisCore panel · AGPL-3.0</span>
                 </div>

@@ -6,19 +6,19 @@
 //
 //   node scripts/screenshot.mjs
 //
-// Requires a panel listening on RAYXO_BASE (default http://127.0.0.1:8080)
+// Requires a panel listening on MURISCORE_BASE (default http://127.0.0.1:8080)
 // and Chrome on the default Windows path.
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-const BASE = process.env.RAYXO_BASE ?? 'http://127.0.0.1:8080';
-const USER = process.env.MURISCORE_USER ?? process.env.RAYXO_USER ?? 'admin';
-const PASSWORD = process.env.MURISCORE_PASSWORD ?? process.env.RAYXO_PASSWORD ?? '';
-const OUT = process.env.RAYXO_SHOTS ?? '.shots';
+const BASE = process.env.MURISCORE_BASE ?? 'http://127.0.0.1:8080';
+const USER = process.env.MURISCORE_USER ?? 'admin';
+const PASSWORD = process.env.MURISCORE_PASSWORD ?? '';
+const OUT = process.env.MURISCORE_SHOTS ?? '.shots';
 const BROWSER =
-    process.env.RAYXO_BROWSER ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+    process.env.MURISCORE_BROWSER ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 
 if (!PASSWORD) {
     console.error('set MURISCORE_PASSWORD to the panel account password');
@@ -43,6 +43,7 @@ const screens = [
     { name: '26-account-ssh', path: '/accounts/siti/ssh' },
     { name: '27-tickets', path: '/tickets' },
     { name: '28-announcements', path: '/announcements' },
+    { name: '29-packages', path: '/packages' },
     { name: '16-new-website', path: '/domains', click: 'New website' },
     { name: '17-new-mailbox', path: '/mail', click: 'Manage' },
     { name: '18-new-database', path: '/databases', click: 'New database' },

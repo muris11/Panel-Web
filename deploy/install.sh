@@ -8,7 +8,7 @@
 # family (AlmaLinux, Rocky, CentOS Stream, Fedora, Oracle) and openSUSE. It
 # installs only what is missing, so it is safe to re-run.
 #
-# It installs the panel *beside* an existing RAYXO/Laravel panel. Nothing in
+# It installs the panel *beside* an existing MURISCORE/Laravel panel. Nothing in
 # /var/www is touched. Both panels can share one MariaDB schema, so cutting
 # over is a matter of which one is enabled — but only one may drain the task
 # queue at a time: Laravel encrypts tasks.payload and this panel writes plain
@@ -16,7 +16,7 @@
 #
 # Environment:
 #   MURISCORE_DB_DSN      MariaDB DSN. If unset, the installer reuses the DSN
-#                         from /var/www/rayxo/.env, or creates a database.
+#                         from /var/www/muriscore/.env, or creates a database.
 #   MURISCORE_APP_KEY     the Laravel APP_KEY, so existing 2FA secrets still read
 #   MURISCORE_ADMIN_EMAIL if set, the first administrator is created with a
 #                         generated password printed once
@@ -54,7 +54,7 @@ BIN_DIR=/usr/local/bin
 CONF_DIR=/etc/muriscore
 ENV_FILE="$CONF_DIR/muriscore.env"
 LISTEN=${MURISCORE_LISTEN:-}
-DATABASE_NAME=rayxo
+DATABASE_NAME=muriscore
 
 say() { printf '\n== %s\n' "$*"; }
 
@@ -224,9 +224,9 @@ else
     [ "$MODE" = dry ] || note "created $PANEL_USER"
 fi
 
-# The panel reaches rayxod through a group-shared socket. Whatever group owns
+# The panel reaches muriscored through a group-shared socket. Whatever group owns
 # that socket, the panel user has to be in it.
-AGENT_SOCKET=${MURISCORE_AGENT_SOCKET:-/run/rayxo/agent.sock}
+AGENT_SOCKET=${MURISCORE_AGENT_SOCKET:-/run/muriscore/agent.sock}
 AGENT_GROUP=
 
 if [ -S "$AGENT_SOCKET" ]; then
@@ -240,22 +240,22 @@ else
     note "agent socket not found yet at $AGENT_SOCKET (the doctor will report it)"
 fi
 
-# The socket's group decides who may open it; rayxod then checks the caller's
+# The socket's group decides who may open it; muriscored then checks the caller's
 # user ID against --allow-user, and accepts exactly one besides root. A panel
-# called muriscore is refused by an agent that only allows rayxo, so point the
+# called muriscore is refused by an agent that only allows muriscore, so point the
 # unit at this user when the Laravel panel is gone (it needs that name).
 say "agent permission"
-AGENT_UNIT=$(systemctl list-unit-files 'rayxod*.service' --no-legend 2>/dev/null | awk '{print $1}' | head -n 1 || true)
+AGENT_UNIT=$(systemctl list-unit-files 'muriscored*.service' --no-legend 2>/dev/null | awk '{print $1}' | head -n 1 || true)
 
 if [ -z "$AGENT_UNIT" ] || ! systemctl cat "$AGENT_UNIT" >/dev/null 2>&1; then
-    note "no rayxod unit to read; $AGENT_UNIT start it with --allow-user $PANEL_USER"
+    note "no muriscored unit to read; $AGENT_UNIT start it with --allow-user $PANEL_USER"
 else
     AGENT_ALLOWED=$(systemctl cat "$AGENT_UNIT" | sed -n 's/.*--allow-user[= ]\([^ ]*\).*/\1/p' | head -n 1)
 
     if [ "$AGENT_ALLOWED" = "$PANEL_USER" ]; then
         note "$AGENT_UNIT already lets $PANEL_USER call the agent"
-    elif [ -f /var/www/rayxo/artisan ]; then
-        note "rayxod allows $AGENT_ALLOWED, and the Laravel panel still runs as that user"
+    elif [ -f /var/www/muriscore/artisan ]; then
+        note "muriscored allows $AGENT_ALLOWED, and the Laravel panel still runs as that user"
         note "when it is retired, change --allow-user to $PANEL_USER in $AGENT_UNIT"
     else
         AGENT_BINARY=$(systemctl cat "$AGENT_UNIT" | sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' | head -n 1)
@@ -275,8 +275,8 @@ else
 ExecStart=
 ExecStart=$AGENT_BINARY --socket $AGENT_SOCKET --allow-user $PANEL_USER \\
     --socket-group ${AGENT_GROUP:-$PANEL_USER} \\
-    --transfer-dir ${AGENT_TRANSFER:-/var/lib/rayxo/transfer} \\
-    --backup-dir ${AGENT_BACKUP:-/var/lib/rayxo/backups}
+    --transfer-dir ${AGENT_TRANSFER:-/var/lib/muriscore/transfer} \\
+    --backup-dir ${AGENT_BACKUP:-/var/lib/muriscore/backups}
 DROPIN
             chmod 0644 "$AGENT_DROPIN"
             systemctl daemon-reload
@@ -293,14 +293,14 @@ fi
 # Laravel panel already installed, or a database this script creates.
 
 say "database"
-DB_DSN=${MURISCORE_DB_DSN:-${RAYXO_DB_DSN:-}}
+DB_DSN=${MURISCORE_DB_DSN:-${MURISCORE_DB_DSN:-}}
 DB_SOURCE="MURISCORE_DB_DSN"
 
-if [ -z "$DB_DSN" ] && [ -r /var/www/rayxo/.env ]; then
-    note "reading the existing panel's database settings from /var/www/rayxo/.env"
+if [ -z "$DB_DSN" ] && [ -r /var/www/muriscore/.env ]; then
+    note "reading the existing panel's database settings from /var/www/muriscore/.env"
 
     env_value() {
-        sed -n "s/^$1=//p" /var/www/rayxo/.env | head -n 1 | sed -e 's/^"//' -e 's/"$//'
+        sed -n "s/^$1=//p" /var/www/muriscore/.env | head -n 1 | sed -e 's/^"//' -e 's/"$//'
     }
 
     DB_NAME=$(env_value DB_DATABASE)
@@ -310,7 +310,7 @@ if [ -z "$DB_DSN" ] && [ -r /var/www/rayxo/.env ]; then
     if [ -n "$DB_NAME" ] && [ -n "$DB_USER" ]; then
         DATABASE_NAME=$DB_NAME
         DB_DSN="$DB_USER:$DB_PASS@unix(/run/mysqld/mysqld.sock)/$DB_NAME?parseTime=true&loc=UTC"
-        DB_SOURCE="/var/www/rayxo/.env"
+        DB_SOURCE="/var/www/muriscore/.env"
     fi
 fi
 
@@ -461,8 +461,8 @@ else
         echo "MURISCORE_SECURE_COOKIES=\"true\""
         echo "MURISCORE_PUBLIC_IP=\"${MURISCORE_PUBLIC_IP:-}\""
         echo "MURISCORE_NAMESERVERS=\"${MURISCORE_NAMESERVERS:-}\""
-        if [ -n "${MURISCORE_APP_KEY:-${RAYXO_APP_KEY:-}}" ]; then
-            echo "MURISCORE_APP_KEY=\"${MURISCORE_APP_KEY:-${RAYXO_APP_KEY:-}}\""
+        if [ -n "${MURISCORE_APP_KEY:-${MURISCORE_APP_KEY:-}}" ]; then
+            echo "MURISCORE_APP_KEY=\"${MURISCORE_APP_KEY:-${MURISCORE_APP_KEY:-}}\""
         fi
     } > "$ENV_FILE"
 
@@ -604,5 +604,5 @@ printf '  If the database had no administrator, create one now:\n'
 printf '    sudo -u %s %s create-admin admin you@example.com\n' "$PANEL_USER" "$BIN_DIR/$SERVICE"
 printf '\n'
 printf '  Only one panel may drain the task queue. When retiring the Laravel one:\n'
-printf '    systemctl disable --now rayxo-queue.service rayxo-scheduler.timer\n'
+printf '    systemctl disable --now muriscore-queue.service muriscore-scheduler.timer\n'
 printf '\n'

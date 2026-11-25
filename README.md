@@ -1,17 +1,17 @@
 # MurisCore
 
-A hosting control panel: the same server agent (`rayxod`), the same MariaDB
-tables, the same job as the RAYXO panel it replaces — written in Go with a React
+A hosting control panel: the same server agent (`muriscored`), the same MariaDB
+tables, the same job as the MURISCORE panel it replaces — written in Go with a React
 single-page interface and shipped as one static binary.
 
 MurisCore is its own panel, not a skin over the old one. It runs unprivileged,
-never shells out, and reaches the server only through named calls to `rayxod`.
+never shells out, and reaches the server only through named calls to `muriscored`.
 The Laravel panel can stay installed beside it and share the same database while
 the new one is proven; only one of them should be *running* at a time, because
 both write `tasks`.
 
 ```
-browser ──HTTPS──▶ muriscore-panel ──JSON-RPC over a unix socket──▶ rayxod (root)
+browser ──HTTPS──▶ muriscore-panel ──JSON-RPC over a unix socket──▶ muriscored (root)
                     │                                               │
                     └─────────────── MariaDB ────────────────────────┘
 ```
@@ -23,7 +23,7 @@ browser ──HTTPS──▶ muriscore-panel ──JSON-RPC over a unix socket�
 | `cmd/panel`         | the binary: `serve`, `migrate`, `create-admin`, `collect`, `doctor`, `version` |
 | `internal/httpapi`  | JSON API under `/api/v1`, sessions, CSRF, the SPA fallback       |
 | `internal/store`    | every SQL statement, written out; no query builder               |
-| `internal/agent`    | JSON-RPC client for `rayxod`, plus a fake driver for development  |
+| `internal/agent`    | JSON-RPC client for `muriscored`, plus a fake driver for development  |
 | `internal/worker`   | claims queued tasks, calls the agent, writes the result back     |
 | `internal/collector`| scheduled traffic, resource and certificate accounting           |
 | `internal/auth`     | bcrypt (reads PHP `$2y$`), TOTP, `$6$` crypt, APP_KEY crypto     |
@@ -50,6 +50,7 @@ out.
 | PostgreSQL     | PostgreSQL databases and logins, grants, password rotation, drop              |
 | Redis          | one cache instance per account, password rotation, memory ceiling, removal    |
 | FTP            | logins pinned to one account and folder, `$6$` crypt passwords                |
+| Packages       | create, edit and delete hosting packages; a changed quota is re-applied        |
 | Files          | browse, read, write, mkdir, delete, compress and extract through the agent    |
 | SSH            | turn a shell on when the package has one, add and remove public keys          |
 | Tickets        | an account asks for help; an administrator or the owning reseller answers     |
@@ -77,7 +78,7 @@ transaction, so a crash re-reads a log instead of losing it.
 
 A shell is a package feature twice over: the account's package has to include
 SSH, and so does the reseller package of whoever owns the account. The installer
-also points `rayxod` at the panel's own user (`--allow-user`), because the agent
+also points `muriscored` at the panel's own user (`--allow-user`), because the agent
 accepts exactly one caller besides root.
 
 Two-factor works the Laravel way: the secret is written unconfirmed, signing in
@@ -110,7 +111,7 @@ What the panel needs on any host:
 
 - MariaDB 10.6+ or MySQL 8;
 - Nginx (or any reverse proxy) for TLS in front of `127.0.0.1:8080`;
-- `rayxod` for anything real to happen. Without it, `MURISCORE_AGENT_DRIVER=fake`
+- `muriscored` for anything real to happen. Without it, `MURISCORE_AGENT_DRIVER=fake`
   lets the panel run end to end and change nothing.
 
 ## Build
@@ -128,9 +129,9 @@ go build -trimpath -ldflags "-s -w -X main.version=$(cat VERSION 2>/dev/null || 
 ## Run it
 
 ```sh
-export MURISCORE_DB_DSN='muriscore:secret@tcp(127.0.0.1:3306)/rayxo?parseTime=true&loc=UTC'
+export MURISCORE_DB_DSN='muriscore:secret@tcp(127.0.0.1:3306)/muriscore?parseTime=true&loc=UTC'
 export MURISCORE_AGENT_DRIVER=socket
-export MURISCORE_AGENT_SOCKET=/run/rayxo/agent.sock
+export MURISCORE_AGENT_SOCKET=/run/muriscore/agent.sock
 export MURISCORE_LISTEN=127.0.0.1:8080
 export MURISCORE_SECURE_COOKIES=true
 
@@ -144,15 +145,15 @@ purpose: logs get copied to backups.
 
 ### Configuration
 
-Settings are read as `MURISCORE_<NAME>`, and `RAYXO_<NAME>` is still accepted so
-an installation from before the rename keeps its env file.
+Every setting is read as `MURISCORE_<NAME>`. Nothing reads a second, older
+prefix: one name, one place to look.
 
 | Variable                     | Default                 | Notes                                                     |
 | ---------------------------- | ----------------------- | --------------------------------------------------------- |
 | `MURISCORE_DB_DSN`           | — (required)            | must include `parseTime=true`                              |
 | `MURISCORE_LISTEN`           | `127.0.0.1:8080`        | behind Nginx on the same host                              |
 | `MURISCORE_AGENT_DRIVER`     | `fake`                  | `socket` on a real server                                  |
-| `MURISCORE_AGENT_SOCKET`     | `/run/rayxo/agent.sock` | the agent owns this path; the panel only reads it          |
+| `MURISCORE_AGENT_SOCKET`     | `/run/muriscore/agent.sock` | the agent owns this path; the panel only reads it          |
 | `MURISCORE_AGENT_TIMEOUT`    | `30s`                   | one call a page waits on                                   |
 | `MURISCORE_AGENT_TASK_TIMEOUT` | `5m`                  | one queued task                                            |
 | `MURISCORE_SESSION_TTL`      | `12h`                   |                                                            |
@@ -170,8 +171,8 @@ accounts sign in with their password only, until they enrol again.
 ## Deployment
 
 ```sh
-sudo MURISCORE_DB_DSN='rayxo@unix(/run/mysqld/mysqld.sock)/rayxo' \
-     MURISCORE_APP_KEY="$(grep ^APP_KEY /var/www/rayxo/.env | cut -d= -f2-)" \
+sudo MURISCORE_DB_DSN='muriscore@unix(/run/mysqld/mysqld.sock)/muriscore' \
+     MURISCORE_APP_KEY="$(grep ^APP_KEY /var/www/muriscore/.env | cut -d= -f2-)" \
      ./deploy/install.sh ./bin/panel
 ```
 
@@ -180,8 +181,8 @@ The installer:
 - detects the distribution and installs only what is missing (`nginx`, a MariaDB
   client, `openssl`) with that distribution's package manager;
 - creates the unprivileged `muriscore` account and adds it to whatever group owns
-  `/run/rayxo/agent.sock`, so the socket is reachable and nothing else is;
-- takes the database from `MURISCORE_DB_DSN`, else from `/var/www/rayxo/.env`,
+  `/run/muriscore/agent.sock`, so the socket is reachable and nothing else is;
+- takes the database from `MURISCORE_DB_DSN`, else from `/var/www/muriscore/.env`,
   else creates a database and a user with a generated password;
 - writes `/etc/muriscore/muriscore.env` (0600) and a self-signed certificate;
 - installs `muriscore-panel` to `/usr/local/bin`, runs `migrate`, and enables
@@ -201,7 +202,7 @@ sudo ./deploy/uninstall.sh             # service, site, binary; keeps /etc/muris
 sudo ./deploy/uninstall.sh --purge     # also removes the env file and certificate
 ```
 
-It leaves MariaDB, `rayxod`, the hosting accounts and the panel's tables alone,
+It leaves MariaDB, `muriscored`, the hosting accounts and the panel's tables alone,
 because another panel may still be reading them.
 
 `deploy/muriscore-panel.service` and `deploy/nginx.conf` are the files it
@@ -231,7 +232,7 @@ run on a distribution nobody tried before.
 
 ## Security model
 
-- No shell. Every change is a method on `rayxod`; the panel has no `exec`.
+- No shell. Every change is a method on `muriscored`; the panel has no `exec`.
 - Sessions: 32 random bytes in a cookie, only a SHA-256 of the token in the
   database, ten concurrent sessions per account at most, one row per sign-in so
   an operator can end a session they do not recognise.
@@ -269,7 +270,7 @@ The reserved-username list is necessarily duplicated: `internal/rules`,
 go test ./...                       # unit tests, no database needed
 
 # the API tests need a throwaway database whose name ends in _test:
-MURISCORE_TEST_DSN='root@tcp(127.0.0.1:3307)/rayxo_test?parseTime=true&loc=UTC' \
+MURISCORE_TEST_DSN='root@tcp(127.0.0.1:3307)/muriscore_test?parseTime=true&loc=UTC' \
     go test ./internal/httpapi/ -v
 ```
 
@@ -285,8 +286,8 @@ node scripts/screenshot.mjs    # PNGs of every screen into .shots/
 node scripts/measure.mjs       # fails on overflow, clipping or overlap at 1440/1024/390px
 ```
 
-Both need a running panel and `MURISCORE_PASSWORD` (or `RAYXO_PASSWORD`).
+Both need a running panel and `MURISCORE_PASSWORD`.
 
 ## Licence
 
-AGPL-3.0, the same as the RAYXO server it drives. See `LICENSE`.
+AGPL-3.0, the same as the MURISCORE server it drives. See `LICENSE`.

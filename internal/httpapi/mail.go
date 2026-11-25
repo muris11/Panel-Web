@@ -45,7 +45,7 @@ func (s *Server) handleMail(w http.ResponseWriter, r *http.Request) {
 
 		selector := strings.ToLower(strings.TrimSpace(request.Selector))
 		if selector == "" {
-			selector = "rayxo"
+			selector = "muriscore"
 		}
 
 		if !localPartPattern.MatchString(selector) {

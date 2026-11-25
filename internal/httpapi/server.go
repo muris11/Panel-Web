@@ -68,6 +68,9 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("DELETE /api/v1/sessions/{id}", s.requireAuth(http.HandlerFunc(s.handleRevokeSession)))
 	mux.Handle("GET /api/v1/tasks", s.requireAuth(http.HandlerFunc(s.handleTasks)))
 	mux.Handle("GET /api/v1/packages", s.requireAuth(http.HandlerFunc(s.handlePackages)))
+	mux.Handle("POST /api/v1/packages", s.requireAuth(http.HandlerFunc(s.handlePackages)))
+	mux.Handle("PATCH /api/v1/packages/{id}", s.requireAuth(http.HandlerFunc(s.handlePackage)))
+	mux.Handle("DELETE /api/v1/packages/{id}", s.requireAuth(http.HandlerFunc(s.handlePackage)))
 
 	mux.Handle("GET /api/v1/usage", s.requireAuth(http.HandlerFunc(s.handleUsage)))
 	mux.Handle("GET /api/v1/tokens", s.requireAuth(http.HandlerFunc(s.handleTokens)))

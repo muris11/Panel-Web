@@ -87,10 +87,10 @@ export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' |
                             <dt>Driver</dt>
                             <dd className="mono">{agent}</dd>
                             <dt>Socket</dt>
-                            <dd className="mono muted">/run/rayxo/agent.sock</dd>
+                            <dd className="mono muted">/run/muriscore/agent.sock</dd>
                             <dt>Privileges</dt>
                             <dd className="muted">
-                                rayxod runs as root; this panel never does. Every change is a named call to it.
+                                muriscored runs as root; this panel never does. Every change is a named call to it.
                             </dd>
                         </dl>
 

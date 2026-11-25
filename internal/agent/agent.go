@@ -1,4 +1,4 @@
-// Package agent talks to rayxod, the root daemon that is the only process
+// Package agent talks to muriscored, the root daemon that is the only process
 // allowed to change the server.
 //
 // The panel never runs a shell: it hands the agent one of the methods the
@@ -55,7 +55,7 @@ func (e *Error) Reason() string {
 	return data.Reason
 }
 
-// SocketAgent calls a real rayxod.
+// SocketAgent calls a real muriscored.
 type SocketAgent struct {
 	socketPath string
 	timeout    time.Duration

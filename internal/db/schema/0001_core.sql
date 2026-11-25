@@ -1,9 +1,9 @@
 -- Core tables the panel needs, with the same names and columns the Laravel
--- panel uses for them, so the Go panel can be pointed at an existing RAYXO
+-- panel uses for them, so the Go panel can be pointed at an existing MURISCORE
 -- database and keep the same accounts, packages and websites.
 --
 -- Every statement is IF NOT EXISTS: these migrations are layered onto an
--- existing schema instead of replacing it, the same way a later RAYXO
+-- existing schema instead of replacing it, the same way a later MURISCORE
 -- release adds a table.
 --
 -- Identifiers are all backticked. MySQL 8 reserves several of these words
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `panel_sessions` (
     CONSTRAINT `panel_sessions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Work handed to rayxod. Same shape as the Laravel panel's tasks table; the
+-- Work handed to muriscored. Same shape as the Laravel panel's tasks table; the
 -- Go panel writes the payload as plain JSON, the Laravel panel encrypted it,
 -- so only one panel should be writing tasks at a time.
 CREATE TABLE IF NOT EXISTS `tasks` (

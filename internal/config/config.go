@@ -4,9 +4,7 @@
 // every production value is explicit (see README): a panel that silently
 // guessed a database or an agent socket is a panel that breaks quietly.
 //
-// Settings are read as MURISCORE_<NAME> first and RAYXO_<NAME> second, so an
-// installation that predates the rename keeps working without editing its env
-// file.
+// Every setting is read as MURISCORE_<NAME>.
 package config
 
 import (
@@ -17,12 +15,8 @@ import (
 	"time"
 )
 
-// Prefix is the name this panel's own settings use.
+// Prefix is the name every setting of this panel uses.
 const Prefix = "MURISCORE_"
-
-// LegacyPrefix is the prefix the panel answered to before the rename. It is
-// still read so an existing deployment keeps its env file.
-const LegacyPrefix = "RAYXO_"
 
 type Config struct {
 	// Listen is the address the panel serves on, e.g. "127.0.0.1:8080".
@@ -40,7 +34,7 @@ type Config struct {
 	// AgentDriver is "socket" (a real server) or "fake" (development).
 	AgentDriver string
 
-	// AgentSocket is rayxod's Unix socket.
+	// AgentSocket is muriscored's Unix socket.
 	AgentSocket string
 
 	// AgentTimeout bounds one agent call a page waits on.
@@ -82,7 +76,7 @@ func Load() (Config, error) {
 		DatabaseDSN:      setting("DB_DSN", ""),
 		AppKey:           setting("APP_KEY", ""),
 		AgentDriver:      setting("AGENT_DRIVER", "fake"),
-		AgentSocket:      setting("AGENT_SOCKET", "/run/rayxo/agent.sock"),
+		AgentSocket:      setting("AGENT_SOCKET", "/run/muriscore/agent.sock"),
 		AgentTimeout:     duration("AGENT_TIMEOUT", 30*time.Second),
 		AgentTaskTimeout: duration("AGENT_TASK_TIMEOUT", 5*time.Minute),
 		SessionTTL:       duration("SESSION_TTL", 12*time.Hour),
@@ -124,15 +118,9 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-// setting reads MURISCORE_<name>, then RAYXO_<name>, then the fallback. The
-// second prefix is kept on purpose: an upgrade replaces the binary, not the
-// file in /etc.
+// setting reads MURISCORE_<name>, or the fallback when it is not set.
 func setting(name, fallback string) string {
 	if value := os.Getenv(Prefix + name); value != "" {
-		return value
-	}
-
-	if value := os.Getenv(LegacyPrefix + name); value != "" {
 		return value
 	}
 
