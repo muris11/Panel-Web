@@ -19,7 +19,7 @@
 
     --text: #f4f4f5;
     --text-2: #b4b4bc;
-    --text-3: #8b8b95;
+    --text-3: #94949e;
 
     --accent: #ffffff;
     --accent-dim: #9d9da6;
@@ -36,8 +36,8 @@
     --shadow: 0 1px 0 rgb(255 255 255 / 3%) inset,
         0 24px 48px -34px rgb(0 0 0 / 85%);
 
-    --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-        'Helvetica Neue', Arial, sans-serif;
+    --font: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+        Roboto, 'Helvetica Neue', Arial, sans-serif;
     --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
 }
 
@@ -140,6 +140,12 @@ button {
 .nav {
     display: flex;
     flex-direction: column;
+    gap: 20px;
+}
+
+.nav-group {
+    display: flex;
+    flex-direction: column;
     gap: 2px;
 }
 
@@ -170,9 +176,9 @@ button {
 }
 
 .nav-item.is-active {
-    background: var(--ink-600);
+    background: rgb(255 255 255 / 8%);
     color: var(--text);
-    box-shadow: inset 2px 0 0 var(--text);
+    font-weight: 550;
 }
 
 .nav-icon {
@@ -251,6 +257,7 @@ button {
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+    padding-bottom: 2px;
 }
 
 .page-title {
@@ -330,10 +337,25 @@ button {
 }
 
 .stat {
+    position: relative;
     padding: 16px 18px 18px;
     display: flex;
     flex-direction: column;
     gap: 7px;
+}
+
+.stat-icon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid var(--line-soft);
+    background: var(--ink-600);
+    color: var(--text-3);
 }
 
 .stat-label {
@@ -577,6 +599,16 @@ tbody tr:hover {
     color: var(--text-2);
 }
 
+.btn.ghost.danger {
+    color: var(--red);
+}
+
+.btn.ghost.danger:hover:not(:disabled) {
+    background: rgb(229 143 138 / 10%);
+    border-color: rgb(229 143 138 / 24%);
+    color: var(--red);
+}
+
 .btn.ghost:hover:not(:disabled) {
     background: var(--ink-600);
     border-color: var(--line-soft);
@@ -742,6 +774,17 @@ select.input {
     gap: 12px;
 }
 
+.drawer-head .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.drawer-head .page-sub {
+    margin-top: 3px;
+    font-size: 12.5px;
+}
+
 .drawer-body {
     padding: 22px;
     overflow-y: auto;
@@ -805,10 +848,22 @@ select.input {
 /* ---------------------------------------------------------------- states */
 
 .empty {
-    padding: 52px 22px;
+    padding: 48px 22px;
     text-align: center;
     color: var(--text-3);
     font-size: 13px;
+}
+
+.empty-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 12px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--ink-600);
+    color: var(--text-3);
 }
 
 .empty strong {
@@ -908,17 +963,17 @@ select.input {
 }
 
 .auth-brand .brand-mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    font-size: 17px;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 19px;
 }
 
 .auth-title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 620;
-    letter-spacing: -0.01em;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 .auth-sub {

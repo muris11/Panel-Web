@@ -146,7 +146,7 @@ export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' |
                                                 {account.status === 'suspended' ? (
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
+                                                        variant="ghost danger"
                                                         busy={busy === account.username}
                                                         onClick={() => void act(account, 'unsuspend')}
                                                     >
@@ -155,7 +155,7 @@ export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' |
                                                 ) : (
                                                     <Button
                                                         size="sm"
-                                                        variant="ghost"
+                                                        variant="ghost danger"
                                                         busy={busy === account.username}
                                                         onClick={() => void act(account, 'suspend')}
                                                     >

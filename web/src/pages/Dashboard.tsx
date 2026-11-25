@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import { api, megabytes, when, type Stats, type SystemInfo, type Task } from '../api';
 import { useSession } from '../session';
-import { Badge, Card, CardHead, Empty, errorMessage, Meter, statusTone } from '../ui';
+import { Badge, Card, CardHead, Empty, errorMessage, IconActivity, IconGlobe, IconPause, IconUsers, Meter, statusTone } from '../ui';
 
 interface DashboardResponse {
     stats: Stats;
@@ -66,15 +66,17 @@ export function Dashboard() {
             ) : null}
 
             <div className="grid-4">
-                <Stat label="Hosting accounts" value={stats?.accounts} foot={`${stats?.active ?? 0} active`} />
+                <Stat label="Hosting accounts" value={stats?.accounts} icon={<IconUsers />} foot={`${stats?.active ?? 0} active`} />
                 <Stat
                     label="Suspended"
+                    icon={<IconPause />}
                     value={stats?.suspended}
                     foot={stats?.pending ? `${stats.pending} waiting to start` : 'none waiting'}
                 />
-                <Stat label="Domains" value={stats?.domains} foot="websites served" />
+                <Stat label="Domains" value={stats?.domains} icon={<IconGlobe />} foot="websites served" />
                 <Stat
                     label="Queued work"
+                    icon={<IconActivity />}
                     value={stats?.tasksQueued}
                     foot={stats?.tasksFailed ? `${stats.tasksFailed} failed recently` : 'nothing failing'}
                     tone={stats?.tasksQueued ? 'bad' : undefined}
@@ -188,15 +190,18 @@ function Stat({
     value,
     foot,
     tone,
+    icon,
 }: {
     label: string;
     value: number | undefined;
     foot: string;
     tone?: 'bad';
+    icon?: ReactNode;
 }) {
     return (
         <Card>
             <div className="stat">
+                {icon ? <span className="stat-icon">{icon}</span> : null}
                 <span className="stat-label">{label}</span>
                 <span className="stat-value" style={tone === 'bad' ? { color: 'var(--red)' } : undefined}>
                     {value === undefined ? <span className="skeleton">000</span> : value}

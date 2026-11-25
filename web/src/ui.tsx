@@ -36,6 +36,14 @@ export function IconUsers({ className = 'nav-icon' }: IconProps) {
     );
 }
 
+export function IconPause({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <path d="M9.5 5.5v13M14.5 5.5v13" />
+        </svg>
+    );
+}
+
 export function IconActivity({ className = 'nav-icon' }: IconProps) {
     return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
@@ -215,7 +223,7 @@ export function statusTone(status: string): 'ok' | 'warn' | 'bad' | 'info' | 'pl
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'default' | 'primary' | 'ghost' | 'danger';
+    variant?: 'default' | 'primary' | 'ghost' | 'danger' | 'ghost danger';
     size?: 'md' | 'sm';
     busy?: boolean;
 }
@@ -233,7 +241,7 @@ export function Button({
         <button
             {...rest}
             disabled={disabled || busy}
-            className={`btn ${variant === 'default' ? '' : variant} ${size === 'sm' ? 'sm' : ''} ${className}`.trim()}
+            className={`btn ${variant === 'default' ? '' : variant.replace(' ', ' ')} ${size === 'sm' ? 'sm' : ''} ${className}`.trim()}
         >
             {busy ? <span className="spinner" aria-hidden="true" /> : null}
             {children}
@@ -279,6 +287,12 @@ export function Field({ label, error, hint, span = false, id, ...rest }: FieldPr
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
     return (
         <div className="empty">
+            <span className="empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
+                    <path d="M4 13h4l2 3h4l2-3h4" />
+                    <path d="M6.5 6.5 4 13v5.5h16V13l-2.5-6.5z" />
+                </svg>
+            </span>
             <strong>{title}</strong>
             {children}
         </div>
