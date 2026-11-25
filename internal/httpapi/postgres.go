@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"rayxo/panel/internal/rules"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/rules"
+	"muriscore/panel/internal/store"
 )
 
 // postgresSuffixPattern is what may follow the account's name in a database or

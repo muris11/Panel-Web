@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/store"
 )
 
 // provision creates a hosting account and drains its queue, because every

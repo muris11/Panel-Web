@@ -14,30 +14,34 @@ import (
 	"testing"
 	"time"
 
-	"rayxo/panel/internal/agent"
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/config"
-	"rayxo/panel/internal/db"
-	"rayxo/panel/internal/store"
-	"rayxo/panel/internal/worker"
+	"muriscore/panel/internal/agent"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/config"
+	"muriscore/panel/internal/db"
+	"muriscore/panel/internal/store"
+	"muriscore/panel/internal/worker"
 )
 
 // These tests need a real MySQL/MariaDB, because the store's SQL is written
-// for one. Point RAYXO_TEST_DSN at a throwaway database whose name ends in
+// for one. Point MURISCORE_TEST_DSN (or the older RAYXO_TEST_DSN) at a
+// throwaway database whose name ends in
 // _test; the tests empty it. Without it they skip, so `go test ./...` works on
 // a machine with no database.
 //
-//	RAYXO_TEST_DSN='root@tcp(127.0.0.1:3307)/rayxo_test?parseTime=true&loc=UTC' go test ./...
+//	MURISCORE_TEST_DSN='root@tcp(127.0.0.1:3307)/rayxo_test?parseTime=true&loc=UTC' go test ./...
 func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 	t.Helper()
 
-	dsn := os.Getenv("RAYXO_TEST_DSN")
+	dsn := os.Getenv("MURISCORE_TEST_DSN")
 	if dsn == "" {
-		t.Skip("set RAYXO_TEST_DSN to run the panel's database tests")
+		dsn = os.Getenv("RAYXO_TEST_DSN")
+	}
+	if dsn == "" {
+		t.Skip("set MURISCORE_TEST_DSN to run the panel's database tests")
 	}
 
 	if !strings.Contains(dsn, "_test") {
-		t.Fatalf("RAYXO_TEST_DSN must name a database ending in _test; it is emptied by these tests: %s", dsn)
+		t.Fatalf("the test DSN must name a database ending in _test; it is emptied by these tests: %s", dsn)
 	}
 
 	ctx := context.Background()

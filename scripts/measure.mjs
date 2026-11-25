@@ -11,14 +11,14 @@ import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const BASE = process.env.RAYXO_BASE ?? 'http://127.0.0.1:8080';
-const USER = process.env.RAYXO_USER ?? 'admin';
-const PASSWORD = process.env.RAYXO_PASSWORD ?? '';
+const USER = process.env.MURISCORE_USER ?? process.env.RAYXO_USER ?? 'admin';
+const PASSWORD = process.env.MURISCORE_PASSWORD ?? process.env.RAYXO_PASSWORD ?? '';
 const PORT = 9334;
 const BROWSER =
     process.env.RAYXO_BROWSER ?? 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 
 if (!PASSWORD) {
-    console.error('set RAYXO_PASSWORD to the panel account password');
+    console.error('set MURISCORE_PASSWORD to the panel account password');
     process.exit(2);
 }
 

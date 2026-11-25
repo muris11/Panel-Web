@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/store"
 )
 
 // handleTwoFactor starts an enrolment or turns the second factor off.
@@ -170,10 +170,10 @@ func (s *Server) decodeSecret(stored string) (string, error) {
 // otpauthURL is the URI an authenticator app scans. It is rendered as text
 // rather than a QR image: no dependency, and it can be pasted on a phone.
 func otpauthURL(username, secret string) string {
-	label := url.PathEscape("RAYXO:" + username)
+	label := url.PathEscape("MurisCore:" + username)
 	query := url.Values{
 		"secret":    {secret},
-		"issuer":    {"RAYXO"},
+		"issuer":    {"MurisCore"},
 		"algorithm": {"SHA1"},
 		"digits":    {"6"},
 		"period":    {"30"},

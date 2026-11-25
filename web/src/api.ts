@@ -168,7 +168,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
         // The session expired or was ended elsewhere. The panel has one place
         // that reacts to this, so every screen gets the sign-in form back
         // instead of a banner it cannot clear.
-        window.dispatchEvent(new Event('rayxo:signed-out'));
+        window.dispatchEvent(new Event('muriscore:signed-out'));
     }
 
     if (!response.ok) {

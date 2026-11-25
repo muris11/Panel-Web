@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/rules"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/rules"
+	"muriscore/panel/internal/store"
 )
 
 // handleDomains lists every website the caller may see, or adds one.

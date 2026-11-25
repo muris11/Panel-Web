@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/store"
 )
 
 // fileCall runs one fs.* action for an account and passes the agent's answer

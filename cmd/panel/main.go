@@ -1,11 +1,12 @@
-// Command panel is RAYXO's control panel: a JSON API and a React single-page
-// app in one static binary.
+// Command panel is MurisCore's control panel: a JSON API and a React
+// single-page app in one static binary.
 //
 // Subcommands:
 //
 //	panel serve                    run the panel (the default)
 //	panel migrate                  apply the schema and exit
 //	panel create-admin <name> <email>
+//	panel doctor                   report whether this host can run the panel
 //	panel version
 package main
 
@@ -19,14 +20,14 @@ import (
 	"syscall"
 	"time"
 
-	"rayxo/panel/internal/agent"
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/config"
-	"rayxo/panel/internal/db"
-	"rayxo/panel/internal/httpapi"
-	"rayxo/panel/internal/rules"
-	"rayxo/panel/internal/store"
-	"rayxo/panel/internal/worker"
+	"muriscore/panel/internal/agent"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/config"
+	"muriscore/panel/internal/db"
+	"muriscore/panel/internal/httpapi"
+	"muriscore/panel/internal/rules"
+	"muriscore/panel/internal/store"
+	"muriscore/panel/internal/worker"
 )
 
 // version is set at build time:
@@ -52,6 +53,8 @@ func main() {
 		err = migrate(logger)
 	case "create-admin":
 		err = createAdmin(logger, os.Args[2:])
+	case "doctor":
+		err = doctor()
 	case "version", "-version", "--version":
 		fmt.Println(version)
 	case "help", "-h", "--help":
@@ -69,22 +72,25 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprint(os.Stderr, `RAYXO panel
+	fmt.Fprint(os.Stderr, `MurisCore panel
 
-  panel serve                     run the panel (default)
-  panel migrate                   apply the schema and exit
-  panel create-admin <user> <email> [--password <password>]
-  panel version
+  muriscore-panel serve                     run the panel (default)
+  muriscore-panel migrate                   apply the schema and exit
+  muriscore-panel create-admin <user> <email> [--password <password>]
+  muriscore-panel doctor                    report whether this host can run it
+  muriscore-panel version
 
-Environment:
-  RAYXO_LISTEN         address to serve on (default 127.0.0.1:8080)
-  RAYXO_DB_DSN         MariaDB DSN, required (include parseTime=true&loc=UTC)
-  RAYXO_AGENT_DRIVER   socket | fake (default fake)
-  RAYXO_AGENT_SOCKET   rayxod socket (default /run/rayxo/agent.sock)
-  RAYXO_APP_KEY        the Laravel APP_KEY, to read encrypted 2FA secrets
-  RAYXO_SESSION_TTL    session lifetime (default 12h)
-  RAYXO_SECURE_COOKIES true behind HTTPS (default false)
-  RAYXO_TRUSTED_PROXIES comma-separated addresses allowed to set X-Forwarded-For
+Environment (MURISCORE_* wins, RAYXO_* is still read for an older install):
+  MURISCORE_LISTEN          address to serve on (default 127.0.0.1:8080)
+  MURISCORE_DB_DSN          MariaDB DSN, required (include parseTime=true&loc=UTC)
+  MURISCORE_AGENT_DRIVER    socket | fake (default fake)
+  MURISCORE_AGENT_SOCKET    rayxod socket (default /run/rayxo/agent.sock)
+  MURISCORE_APP_KEY         the Laravel APP_KEY, to read encrypted 2FA secrets
+  MURISCORE_SESSION_TTL     session lifetime (default 12h)
+  MURISCORE_SECURE_COOKIES  true behind HTTPS (default false)
+  MURISCORE_TRUSTED_PROXIES comma-separated addresses allowed to set X-Forwarded-For
+  MURISCORE_PUBLIC_IP       address new A records point at
+  MURISCORE_NAMESERVERS     nameservers every new zone names
 `)
 }
 
@@ -132,7 +138,7 @@ func serve(logger *slog.Logger, args []string) error {
 		client = agent.NewSocketAgent(cfg.AgentSocket, cfg.AgentTimeout)
 	default:
 		client = agent.NewFake()
-		logger.Warn("the agent is simulated: no change reaches a server (RAYXO_AGENT_DRIVER=fake)")
+		logger.Warn("the agent is simulated: no change reaches a server (MURISCORE_AGENT_DRIVER=fake)")
 	}
 
 	logger.Info("panel starting", "version", version, "agent", client.Name())

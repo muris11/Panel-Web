@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/rules"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/rules"
 )
 
 // handleProfile changes the signed-in user's own name and address. Nothing

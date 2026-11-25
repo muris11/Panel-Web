@@ -1,4 +1,4 @@
-module rayxo/panel
+module muriscore/panel
 
 go 1.24
 

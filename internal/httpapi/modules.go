@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"rayxo/panel/internal/rules"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/rules"
+	"muriscore/panel/internal/store"
 )
 
 // passwordAlphabet has 32 characters, so a random byte maps to one with no

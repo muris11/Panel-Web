@@ -11,7 +11,7 @@ import (
 )
 
 // SessionCookieName is the browser cookie that carries a session token.
-const SessionCookieName = "rayxo_session"
+const SessionCookieName = "muriscore_session"
 
 // CSRFHeader is the header the SPA echoes the session's CSRF token in.
 // A header, not a form field: the SPA sends JSON, and a cross-site page

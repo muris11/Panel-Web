@@ -1,16 +1,15 @@
 [Unit]
-Description=RAYXO panel
-Documentation=https://github.com/rayxo/rayxo
-After=network-online.target mariadb.service rayxod.service
+Description=MurisCore panel
+Documentation=https://github.com/muris11/Panel-Web
+After=network-online.target mariadb.service
 Wants=network-online.target
-Requires=rayxod.service
 
 [Service]
 Type=simple
-User=rayxo
-Group=rayxo-nginx
-EnvironmentFile=/etc/rayxo/panel.env
-ExecStart=/usr/local/bin/rayxo-panel serve
+User=@PANEL_USER@
+Group=@PANEL_GROUP@
+EnvironmentFile=@ENV_FILE@
+ExecStart=@BINARY@ serve
 # The panel writes nothing to disk: no state directory, no temporary files.
 ProtectSystem=strict
 ProtectHome=true

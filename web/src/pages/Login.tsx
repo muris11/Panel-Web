@@ -34,7 +34,7 @@ export function Login({
                 {
                     method: 'POST',
                     body: { login, password, totp: code },
-                    csrf: readCookie('rayxo_csrf'),
+                    csrf: readCookie('muriscore_csrf'),
                 },
             );
 
@@ -56,9 +56,9 @@ export function Login({
         <div className="auth">
             <div className="auth-card">
                 <div className="auth-brand">
-                    <div className="brand-mark">R</div>
+                    <div className="brand-mark">M</div>
                     <div>
-                        <h1 className="auth-title">Sign in to RAYXO</h1>
+                        <h1 className="auth-title">Sign in to MurisCore</h1>
                         <p className="auth-sub">Server control panel</p>
                     </div>
                 </div>
@@ -113,7 +113,7 @@ export function Login({
                         <span className={`dot ${agent === 'socket' ? '' : 'sim'}`} />
                         {agent === 'socket' ? 'Connected to rayxod' : 'Simulated agent — no server changes'}
                     </span>
-                    <span>RAYXO panel · AGPL-3.0</span>
+                    <span>MurisCore panel · AGPL-3.0</span>
                 </div>
             </div>
         </div>

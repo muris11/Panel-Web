@@ -1,8 +1,10 @@
-# What this panel covers
+# What MurisCore covers
 
-This is not a re-skin of the Laravel panel and it is not a line-by-line port of
-it. It is the panel built again for the jobs a hosting account actually needs,
-with the parts that only existed to keep PHP working left behind. This file says
+MurisCore is its own panel, not a re-skin of the Laravel one and not a
+line-by-line port of it. It is built again for the jobs a hosting account
+actually needs, with the parts that only existed to keep PHP working left
+behind, and it installs on the distributions a hosting server is usually built
+on (see "Hosts" below). This file says
 what is done, what is different on purpose, and what is still open, so nobody has
 to guess from the file list.
 
@@ -19,6 +21,7 @@ unless it says otherwise. "Agent" is the private call the panel makes over
 | Two-factor (TOTP) with 8 single-use recovery codes | `internal/httpapi/twofactor.go` |
 | Turn two-factor off only with the current password | `handleTwoFactor` |
 | Change own name, email, password | `internal/httpapi/profile.go` |
+| `muriscore-panel doctor` reports what a host is missing | `cmd/panel/doctor.go` |
 | Changing the password drops every other session | `store.UpdatePassword` + `startSession` |
 | Sessions list and revoke | `handleSessions`, `handleRevokeSession` |
 | API tokens (Bearer, SHA-256 at rest, shown once) | `internal/httpapi/tokens.go` |
@@ -66,11 +69,15 @@ These are choices, not gaps.
 
 Honest list, roughly in the order that matters.
 
-1. **`RAYXO_AGENT_DRIVER=socket` has never talked to a real `rayxod`.** Every
-   end-to-end test uses the fake agent. The client is small and follows
-   `agent/internal/client/client.go`, but a Linux box is the proof.
-2. **`deploy/install.sh` has not been run on Ubuntu 24.04.** The unit, socket
-   group, nginx vhost and certificate steps are written but unproven.
+1. **The socket driver has not talked to a real `rayxod` yet.** The protocol is
+   tested against a real Unix socket in `internal/agent/agent_test.go` (framing,
+   JSON-RPC ids, refusals with a reason, a null-id rejection, a missing socket),
+   but a Linux box with the daemon running is still the proof.
+2. **`deploy/install.sh` has not been run on a real server.** It detects the
+   Debian, RHEL and SUSE families and handles `apt`, `dnf`/`yum` and `zypper`,
+   SELinux and `firewalld`/`ufw`, but every step here was written on Windows.
+   `muriscore-panel doctor` and `--print-only` exist so the first run can be
+   checked before anything changes.
 3. **The Laravel panel is still what `installer/setup.sh` installs.** The Go
    panel installs beside it on `:2223`. Retiring the PHP panel means removing
    its queue worker, and only one panel may drain `tasks` at a time: Laravel
@@ -93,3 +100,18 @@ Honest list, roughly in the order that matters.
    syntax highlighting; a subdomain does not yet pick its parent zone in the
    drawer; mail has no quota or send-limit field; database size is only what the
    last collection run measured.
+
+## Hosts
+
+| Family | Names | Package manager | Extras handled |
+| ------ | ----- | --------------- | -------------- |
+| Debian | Debian 12/13, Ubuntu 22.04/24.04, Mint, Pop, Kali, Devuan, Raspbian | `apt` | `ufw` when active |
+| RHEL   | AlmaLinux 9, Rocky 9, CentOS Stream, Fedora, Oracle Linux, Amazon Linux | `dnf` / `yum` | SELinux boolean, `firewalld` |
+| SUSE   | openSUSE Leap/Tumbleweed, SLES | `zypper` | — |
+
+Anything else: the binary is static and works, `--no-nginx` skips the web server,
+and `doctor` names what is missing instead of failing at the first request.
+
+On a host where 2222 is already taken (the Laravel panel), the installer picks
+2223 rather than fighting over the port, so both can be tried before one is
+retired.

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/store"
 )
 
 // Error codes the SPA switches on. They are stable strings, not numbers, so a

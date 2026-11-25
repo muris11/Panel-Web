@@ -12,8 +12,8 @@ import (
 	"log/slog"
 	"time"
 
-	"rayxo/panel/internal/agent"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/agent"
+	"muriscore/panel/internal/store"
 )
 
 // Config tunes the worker.

@@ -3,6 +3,10 @@
 // Everything has a development default so "go run ./cmd/panel" starts, and
 // every production value is explicit (see README): a panel that silently
 // guessed a database or an agent socket is a panel that breaks quietly.
+//
+// Settings are read as MURISCORE_<NAME> first and RAYXO_<NAME> second, so an
+// installation that predates the rename keeps working without editing its env
+// file.
 package config
 
 import (
@@ -12,6 +16,13 @@ import (
 	"strings"
 	"time"
 )
+
+// Prefix is the name this panel's own settings use.
+const Prefix = "MURISCORE_"
+
+// LegacyPrefix is the prefix the panel answered to before the rename. It is
+// still read so an existing deployment keeps its env file.
+const LegacyPrefix = "RAYXO_"
 
 type Config struct {
 	// Listen is the address the panel serves on, e.g. "127.0.0.1:8080".
@@ -62,43 +73,43 @@ type Config struct {
 // Load reads the configuration and refuses one that cannot work.
 func Load() (Config, error) {
 	cfg := Config{
-		Listen:           env("RAYXO_LISTEN", "127.0.0.1:8080"),
-		DatabaseDSN:      env("RAYXO_DB_DSN", ""),
-		AppKey:           env("RAYXO_APP_KEY", ""),
-		AgentDriver:      env("RAYXO_AGENT_DRIVER", "fake"),
-		AgentSocket:      env("RAYXO_AGENT_SOCKET", "/run/rayxo/agent.sock"),
-		AgentTimeout:     duration("RAYXO_AGENT_TIMEOUT", 30*time.Second),
-		AgentTaskTimeout: duration("RAYXO_AGENT_TASK_TIMEOUT", 5*time.Minute),
-		SessionTTL:       duration("RAYXO_SESSION_TTL", 12*time.Hour),
-		SecureCookies:    boolEnv("RAYXO_SECURE_COOKIES", false),
-		PublicIP:         env("RAYXO_PUBLIC_IP", ""),
+		Listen:           setting("LISTEN", "127.0.0.1:8080"),
+		DatabaseDSN:      setting("DB_DSN", ""),
+		AppKey:           setting("APP_KEY", ""),
+		AgentDriver:      setting("AGENT_DRIVER", "fake"),
+		AgentSocket:      setting("AGENT_SOCKET", "/run/rayxo/agent.sock"),
+		AgentTimeout:     duration("AGENT_TIMEOUT", 30*time.Second),
+		AgentTaskTimeout: duration("AGENT_TASK_TIMEOUT", 5*time.Minute),
+		SessionTTL:       duration("SESSION_TTL", 12*time.Hour),
+		SecureCookies:    boolSetting("SECURE_COOKIES", false),
+		PublicIP:         setting("PUBLIC_IP", ""),
 	}
 
-	for _, nameserver := range strings.Split(env("RAYXO_NAMESERVERS", ""), ",") {
+	for _, nameserver := range strings.Split(setting("NAMESERVERS", ""), ",") {
 		if nameserver = strings.TrimSpace(nameserver); nameserver != "" {
 			cfg.Nameservers = append(cfg.Nameservers, nameserver)
 		}
 	}
 
 	if cfg.DatabaseDSN == "" {
-		return Config{}, fmt.Errorf("RAYXO_DB_DSN is not set, e.g. \"rayxo:secret@tcp(127.0.0.1:3306)/rayxo?parseTime=true&loc=UTC\"")
+		return Config{}, fmt.Errorf("%sDB_DSN is not set, e.g. \"muriscore:secret@tcp(127.0.0.1:3306)/muriscore?parseTime=true&loc=UTC\"", Prefix)
 	}
 
 	switch cfg.AgentDriver {
 	case "socket", "fake":
 	default:
-		return Config{}, fmt.Errorf("RAYXO_AGENT_DRIVER must be \"socket\" or \"fake\", not %q", cfg.AgentDriver)
+		return Config{}, fmt.Errorf("%sAGENT_DRIVER must be \"socket\" or \"fake\", not %q", Prefix, cfg.AgentDriver)
 	}
 
 	if cfg.AgentDriver == "socket" && cfg.AgentSocket == "" {
-		return Config{}, fmt.Errorf("RAYXO_AGENT_SOCKET is empty while RAYXO_AGENT_DRIVER is \"socket\"")
+		return Config{}, fmt.Errorf("%sAGENT_SOCKET is empty while %sAGENT_DRIVER is \"socket\"", Prefix, Prefix)
 	}
 
 	if cfg.SessionTTL < time.Minute {
-		return Config{}, fmt.Errorf("RAYXO_SESSION_TTL must be at least a minute")
+		return Config{}, fmt.Errorf("%sSESSION_TTL must be at least a minute", Prefix)
 	}
 
-	for _, proxy := range strings.Split(env("RAYXO_TRUSTED_PROXIES", ""), ",") {
+	for _, proxy := range strings.Split(setting("TRUSTED_PROXIES", ""), ",") {
 		if proxy = strings.TrimSpace(proxy); proxy != "" {
 			cfg.TrustedProxies = append(cfg.TrustedProxies, proxy)
 		}
@@ -107,8 +118,15 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-func env(name, fallback string) string {
-	if value, ok := os.LookupEnv(name); ok && value != "" {
+// setting reads MURISCORE_<name>, then RAYXO_<name>, then the fallback. The
+// second prefix is kept on purpose: an upgrade replaces the binary, not the
+// file in /etc.
+func setting(name, fallback string) string {
+	if value := os.Getenv(Prefix + name); value != "" {
+		return value
+	}
+
+	if value := os.Getenv(LegacyPrefix + name); value != "" {
 		return value
 	}
 
@@ -116,8 +134,8 @@ func env(name, fallback string) string {
 }
 
 func duration(name string, fallback time.Duration) time.Duration {
-	value, ok := os.LookupEnv(name)
-	if !ok || value == "" {
+	value := setting(name, "")
+	if value == "" {
 		return fallback
 	}
 
@@ -127,7 +145,7 @@ func duration(name string, fallback time.Duration) time.Duration {
 		// zero and make every task time out at once.
 		seconds, secondsErr := strconv.Atoi(value)
 		if secondsErr != nil {
-			panic(fmt.Sprintf("%s: %q is not a duration", name, value))
+			panic(fmt.Sprintf("%s%s: %q is not a duration", Prefix, name, value))
 		}
 
 		return time.Duration(seconds) * time.Second
@@ -136,9 +154,9 @@ func duration(name string, fallback time.Duration) time.Duration {
 	return parsed
 }
 
-func boolEnv(name string, fallback bool) bool {
-	value, ok := os.LookupEnv(name)
-	if !ok || value == "" {
+func boolSetting(name string, fallback bool) bool {
+	value := setting(name, "")
+	if value == "" {
 		return fallback
 	}
 

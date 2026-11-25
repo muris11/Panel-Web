@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"rayxo/panel/internal/auth"
+	"muriscore/panel/internal/auth"
 )
 
 // enrolTwoFactor starts and confirms the second factor for the signed-in

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/store"
 )
 
 // redisMemoryChoices are the ceilings the drawer offers. The agent takes any

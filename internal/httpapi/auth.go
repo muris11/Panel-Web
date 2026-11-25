@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/store"
 )
 
 // userPayload is what the SPA is told about the signed-in account. It never
@@ -233,7 +233,7 @@ func (s *Server) twoFactorSecret(user store.User) ([]byte, error) {
 	}
 
 	if s.cfg.AppKey == "" {
-		return nil, errors.New("the two-factor secret is encrypted and RAYXO_APP_KEY is not set")
+		return nil, errors.New("the two-factor secret is encrypted and MURISCORE_APP_KEY is not set")
 	}
 
 	plain, err := auth.DecryptLaravel(s.cfg.AppKey, user.TwoFactorSecret)

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/store"
 )
 
 // formatTimePtr formats an optional timestamp the way every other payload

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/store"
 )
 
 type ctxKey int
@@ -19,7 +19,7 @@ const (
 
 // preSessionCookie carries the CSRF token for the sign-in form, before there
 // is a session to attach one to.
-const preSessionCookie = "rayxo_csrf"
+const preSessionCookie = "muriscore_csrf"
 
 // sessionFrom returns the signed-in browser's session.
 func sessionFrom(ctx context.Context) (store.Session, bool) {

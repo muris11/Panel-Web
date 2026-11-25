@@ -32,9 +32,9 @@ export default function App() {
     useEffect(() => {
         const onSignedOut = (): void => setUser(null);
 
-        window.addEventListener('rayxo:signed-out', onSignedOut);
+        window.addEventListener('muriscore:signed-out', onSignedOut);
 
-        return () => window.removeEventListener('rayxo:signed-out', onSignedOut);
+        return () => window.removeEventListener('muriscore:signed-out', onSignedOut);
     }, [setUser]);
 
     if (loading) {
@@ -194,7 +194,7 @@ function Boot() {
                 <div className="brand">
                     <div className="brand-mark">R</div>
                     <div>
-                        <div className="brand-name">RAYXO</div>
+                        <div className="brand-name">MurisCore</div>
                         <span className="brand-sub">Control panel</span>
                     </div>
                 </div>

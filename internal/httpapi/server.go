@@ -12,11 +12,11 @@ import (
 	"net/http"
 	"time"
 
-	"rayxo/panel/internal/agent"
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/config"
-	"rayxo/panel/internal/store"
-	"rayxo/panel/internal/web"
+	"muriscore/panel/internal/agent"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/config"
+	"muriscore/panel/internal/store"
+	"muriscore/panel/internal/web"
 )
 
 // Server holds what every handler needs.

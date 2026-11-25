@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/store"
 )
 
 // handleTokens lists and creates API tokens. A token is shown once, at

@@ -51,9 +51,9 @@ export function Shell({ children }: { children: ReactNode }) {
         <div className="app">
             <aside className="sidebar">
                 <div className="brand">
-                    <div className="brand-mark">R</div>
+                    <div className="brand-mark">M</div>
                     <div>
-                        <div className="brand-name">RAYXO</div>
+                        <div className="brand-name">MurisCore</div>
                         <span className="brand-sub">Control panel</span>
                     </div>
                 </div>

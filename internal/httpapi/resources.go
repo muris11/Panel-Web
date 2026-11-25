@@ -5,9 +5,9 @@ import (
 	"path"
 	"strings"
 
-	"rayxo/panel/internal/auth"
-	"rayxo/panel/internal/rules"
-	"rayxo/panel/internal/store"
+	"muriscore/panel/internal/auth"
+	"muriscore/panel/internal/rules"
+	"muriscore/panel/internal/store"
 )
 
 // --- FTP ------------------------------------------------------------------
