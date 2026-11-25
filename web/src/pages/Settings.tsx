@@ -53,7 +53,7 @@ export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' |
 
             {error ? <div className="banner bad">{error}</div> : null}
 
-            <div className="grid-2">
+            <div className="grid-2 top">
                 <Card>
                     <CardHead title="Your account" />
                     <div className="card-body">
@@ -71,7 +71,7 @@ export function Settings({ onToast }: { onToast: (message: string, tone?: 'ok' |
                                 {user.twoFactor ? (
                                     <Badge tone="ok">enabled</Badge>
                                 ) : (
-                                    <Badge tone="warn">not set up</Badge>
+                                    <span className="muted">not set up</span>
                                 )}
                             </dd>
                             <dt>Last sign in</dt>
@@ -245,7 +245,7 @@ function Profile({
     }
 
     return (
-        <div className="grid-2">
+        <div className="grid-2 top">
             <Card>
                 <CardHead title="Your details" />
                 <form className="form" onSubmit={(event) => void saveDetails(event)}>

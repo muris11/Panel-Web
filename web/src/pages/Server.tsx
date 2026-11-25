@@ -146,6 +146,7 @@ export function Server({ onToast }: { onToast: (message: string, tone?: 'ok' | '
                                                 <div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
                                                     <Button
                                                         size="sm"
+                                                        variant="ghost"
                                                         busy={busy === `${service.unit}:restart`}
                                                         onClick={() => void act(service, 'restart')}
                                                     >
@@ -153,6 +154,7 @@ export function Server({ onToast }: { onToast: (message: string, tone?: 'ok' | '
                                                     </Button>
                                                     <Button
                                                         size="sm"
+                                                        variant="ghost"
                                                         busy={busy === `${service.unit}:reload`}
                                                         onClick={() => void act(service, 'reload')}
                                                     >

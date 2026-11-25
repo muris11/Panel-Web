@@ -279,28 +279,44 @@ export function FilesPicker() {
             <header className="page-head">
                 <div>
                     <h1 className="page-title">Files</h1>
-                    <p className="page-sub">Pick an account to browse its home directory</p>
+                    <p className="page-sub">{accounts === null ? 'Loading accounts...' : `Pick one of ${accounts.length} ${accounts.length === 1 ? 'account' : 'accounts'} to browse its home directory`}</p>
                 </div>
             </header>
 
             <Card>
                 <div className="table-wrap">
                     <table>
-                        <tbody>
-                            {(accounts ?? []).map((account) => (
-                                <tr key={account.id}>
-                                    <td className="mono strong">{account.username}</td>
-                                    <td className="muted">{account.name}</td>
-                                    <td>
-                                        <div className="row" style={{ justifyContent: 'flex-end' }}>
-                                            <a className="btn sm" {...linkProps(`/files/${account.username}`)}>
-                                                Browse
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
+                        <thead>
+                            <tr>
+                                <th>Account</th>
+                                <th>Home</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        {accounts === null ? (
+                            <SkeletonRows rows={4} columns={3} />
+                        ) : (
+                            <tbody>
+                                {accounts.map((account) => (
+                                    <tr key={account.id}>
+                                        <td>
+                                            <div className="cell-main">
+                                                <span className="strong mono">{account.username}</span>
+                                                <span className="cell-sub">{account.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="mono muted">{`/home/${account.username}`}</td>
+                                        <td>
+                                            <div className="row" style={{ justifyContent: 'flex-end' }}>
+                                                <a className="btn sm" {...linkProps(`/files/${account.username}`)}>
+                                                    Browse
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        )}
                     </table>
                 </div>
 

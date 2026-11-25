@@ -141,7 +141,7 @@ export function Domains() {
                 ) : null}
             </Card>
 
-            <p className="muted" style={{ fontSize: 12 }}>
+            <p className="footnote">
                 A domain belongs to one account, which owns its files, mail and databases.
             </p>
 
