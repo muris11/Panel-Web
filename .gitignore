@@ -1,0 +1,5 @@
+# Build output. internal/web/dist is tracked on purpose: `go build` embeds it,
+# so a fresh clone must be able to build without Node installed.
+bin/
+.shots/
+web/node_modules/

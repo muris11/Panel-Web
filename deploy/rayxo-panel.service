@@ -1,0 +1,30 @@
+[Unit]
+Description=RAYXO panel
+Documentation=https://github.com/rayxo/rayxo
+After=network-online.target mariadb.service rayxod.service
+Wants=network-online.target
+Requires=rayxod.service
+
+[Service]
+Type=simple
+User=rayxo
+Group=rayxo-nginx
+EnvironmentFile=/etc/rayxo/panel.env
+ExecStart=/usr/local/bin/rayxo-panel serve
+# The panel writes nothing to disk: no state directory, no temporary files.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+NoNewPrivileges=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
