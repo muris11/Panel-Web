@@ -972,12 +972,32 @@ func TestSSHKeysBelongToTheAccount(t *testing.T) {
 }
 
 // A package without SSH must be refused before anything is queued, so the
-// account is not told its shell is coming when it never can.
+// account is not told its shell is coming when it never can. An account with
+// no package at all is unrestricted, which is how the Laravel panel reads the
+// same rows.
 func TestSSHNeedsAPackageThatIncludesIt(t *testing.T) {
 	server, st, queue := harness(t)
 	httpClient, csrf := signIn(t, server, st)
 
 	provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	created, err := st.DB().ExecContext(context.Background(),
+		"INSERT INTO packages (name, ssh, created_at, updated_at) VALUES ('blog', 0, NOW(), NOW())")
+	if err != nil {
+		t.Fatalf("create the package: %v", err)
+	}
+
+	packageID, _ := created.LastInsertId()
+
+	siti, err := st.UserByUsername(context.Background(), "siti")
+	if err != nil {
+		t.Fatalf("read the account: %v", err)
+	}
+
+	if _, err := st.DB().ExecContext(context.Background(),
+		"UPDATE users SET package_id = ? WHERE id = ?", packageID, siti.ID); err != nil {
+		t.Fatalf("attach the package: %v", err)
+	}
 
 	answer := call(t, httpClient, http.MethodPatch, server.URL+"/api/v1/ssh", map[string]any{
 		"username": "siti",

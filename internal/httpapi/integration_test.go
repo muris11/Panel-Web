@@ -59,6 +59,9 @@ func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 
 	// Order matters: children before parents.
 	for _, statement := range []string{
+		"DELETE FROM `ticket_messages`",
+		"DELETE FROM `tickets`",
+		"DELETE FROM `announcements`",
 		"DELETE FROM `database_database_user`",
 		"DELETE FROM `database_remote_hosts`",
 		"DELETE FROM `database_users`",
@@ -76,8 +79,9 @@ func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 		"DELETE FROM `audit_logs`",
 		"DELETE FROM `panel_sessions`",
 		"DELETE FROM `domains`",
-		"DELETE FROM `packages`",
 		"DELETE FROM `users`",
+		"DELETE FROM `reseller_packages`",
+		"DELETE FROM `packages`",
 	} {
 		if _, err := pool.ExecContext(ctx, statement); err != nil {
 			t.Fatalf("%s: %v", statement, err)

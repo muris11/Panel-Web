@@ -9,6 +9,8 @@ import {
     IconGauge,
     IconGlobe,
     IconKey,
+    IconTicket,
+    IconMegaphone,
     IconMail,
     IconServer,
     IconSettings,
@@ -45,6 +47,8 @@ export function Shell({ children }: { children: ReactNode }) {
         ...hosting,
         { to: '/files', label: 'Files', icon: <IconFolder /> },
         ...(user.role === 'admin' ? [{ to: '/server', label: 'Server', icon: <IconServer /> }] : []),
+        { to: '/announcements', label: 'Announcements', icon: <IconMegaphone /> },
+        { to: '/tickets', label: 'Support', icon: <IconTicket /> },
         { to: '/activity', label: 'Activity', icon: <IconActivity /> },
         { to: '/settings', label: 'Settings', icon: <IconSettings /> },
     ];

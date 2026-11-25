@@ -52,6 +52,8 @@ out.
 | FTP            | logins pinned to one account and folder, `$6$` crypt passwords                |
 | Files          | browse, read, write, mkdir, delete, compress and extract through the agent    |
 | SSH            | turn a shell on when the package has one, add and remove public keys          |
+| Tickets        | an account asks for help; an administrator or the owning reseller answers     |
+| Announcements  | an administrator or reseller writes once to many accounts, with a reach count |
 | Cron           | per-account jobs, applied as a whole crontab                                  |
 | Backups        | list archives from disk, start a backup, restore, delete                      |
 | Server         | service status/restart/reload, firewall rules, hostname and timezone          |
@@ -72,6 +74,11 @@ record the outcome of each run in `collector_runs`, and can be driven once by
 hand or from cron with `muriscore-panel collect`. Bandwidth is counted from a
 cursor the agent returns: the bytes and the cursor are written in one
 transaction, so a crash re-reads a log instead of losing it.
+
+A shell is a package feature twice over: the account's package has to include
+SSH, and so does the reseller package of whoever owns the account. The installer
+also points `rayxod` at the panel's own user (`--allow-user`), because the agent
+accepts exactly one caller besides root.
 
 Two-factor works the Laravel way: the secret is written unconfirmed, signing in
 needs no code until the account proves it can generate one, and eight single-use

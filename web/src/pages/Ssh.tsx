@@ -157,7 +157,7 @@ export function Ssh({
                 <Button onClick={() => setAdding(true)}>Add a key</Button>
             </header>
 
-            <div className="grid two">
+            <div className="grid-2">
                 <Card>
                     <CardHead title="Shell access">
                         <Badge tone={access.active ? 'ok' : access.enabled ? 'warn' : 'plain'}>

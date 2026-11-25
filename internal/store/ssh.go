@@ -181,24 +181,3 @@ func (s *Store) SSHEnabled(ctx context.Context, userID int64) (bool, error) {
 
 	return enabled, wrap("read the SSH access", err)
 }
-
-// PackageAllowsSSH reports whether the account's own package includes SSH.
-//
-// A reseller's package counts too in the Laravel panel; that table is not part
-// of this schema yet, so a reseller account is judged by its own package only.
-func (s *Store) PackageAllowsSSH(ctx context.Context, userID int64) (bool, error) {
-	var allowed sql.NullBool
-
-	err := s.db.QueryRowContext(ctx, `
-		SELECT p.ssh FROM users u JOIN packages p ON p.id = u.package_id WHERE u.id = ?`, userID).Scan(&allowed)
-	if errors.Is(err, sql.ErrNoRows) {
-		// No package, or no row at all: no shell either way.
-		return false, nil
-	}
-
-	if err != nil {
-		return false, wrap("read the package", err)
-	}
-
-	return allowed.Bool, nil
-}

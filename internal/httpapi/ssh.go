@@ -70,7 +70,7 @@ func (s *Server) showSSH(w http.ResponseWriter, r *http.Request, caller store.Us
 		return
 	}
 
-	allowed, err := s.store.PackageAllowsSSH(r.Context(), account.ID)
+	allowed, err := s.store.AllowsSSH(r.Context(), account.ID)
 	if err != nil {
 		s.failStore(w, r, err)
 
@@ -134,7 +134,7 @@ func (s *Server) setSSHEnabled(w http.ResponseWriter, r *http.Request, caller, a
 	}
 
 	if enabled {
-		allowed, err := s.store.PackageAllowsSSH(r.Context(), account.ID)
+		allowed, err := s.store.AllowsSSH(r.Context(), account.ID)
 		if err != nil {
 			s.failStore(w, r, err)
 

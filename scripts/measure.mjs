@@ -39,6 +39,8 @@ const screens = [
     '/ftp',
     '/files',
     '/server',
+    '/tickets',
+    '/announcements',
     '/activity',
     '/settings',
 ];

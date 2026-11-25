@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { User } from './api';
 import { navigate, usePath } from './router';
-import { SessionProvider, useSessionProbe } from './session';
+import { SessionProvider, useSession, useSessionProbe } from './session';
 import { errorMessage, useToasts } from './ui';
 import { AccountDetail } from './pages/AccountDetail';
 import { Accounts } from './pages/Accounts';
@@ -15,6 +15,8 @@ import { Domains } from './pages/Domains';
 import { Files, FilesPicker } from './pages/Files';
 import { FTP } from './pages/FTP';
 import { Ssh } from './pages/Ssh';
+import { Tickets } from './pages/Tickets';
+import { Announcements } from './pages/Announcements';
 import { Login } from './pages/Login';
 import { Mail } from './pages/Mail';
 import { Postgres } from './pages/Postgres';
@@ -73,6 +75,8 @@ export default function App() {
 }
 
 function Screen({ path, onToast }: { path: string; onToast: (message: string, tone?: 'ok' | 'bad') => void }) {
+    const { user } = useSession();
+
     if (path === '/' || path === '') {
         return <Dashboard />;
     }
@@ -167,6 +171,14 @@ function Screen({ path, onToast }: { path: string; onToast: (message: string, to
 
     if (path === '/server') {
         return <Server onToast={onToast} />;
+    }
+
+    if (path === '/tickets') {
+        return <Tickets role={user.role} onToast={onToast} />;
+    }
+
+    if (path === '/announcements') {
+        return <Announcements role={user.role} onToast={onToast} />;
     }
 
     if (path === '/activity') {

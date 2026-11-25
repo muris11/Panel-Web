@@ -145,6 +145,19 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("POST /api/v1/ssh/keys", accounts(http.HandlerFunc(s.handleSSHKeys)))
 	mux.Handle("DELETE /api/v1/ssh/keys/{id}", accounts(http.HandlerFunc(s.handleSSHKey)))
 
+	// Tickets: every account may open one; an administrator or reseller sees the
+	// inbox of the accounts it answers.
+	mux.Handle("GET /api/v1/tickets", s.requireAuth(http.HandlerFunc(s.handleTickets)))
+	mux.Handle("POST /api/v1/tickets", s.requireAuth(http.HandlerFunc(s.handleTickets)))
+	mux.Handle("GET /api/v1/tickets/{id}", s.requireAuth(http.HandlerFunc(s.handleTicket)))
+	mux.Handle("POST /api/v1/tickets/{id}/reply", s.requireAuth(http.HandlerFunc(s.handleTicket)))
+	mux.Handle("POST /api/v1/tickets/{id}/status", s.requireAuth(http.HandlerFunc(s.handleTicketStatus)))
+
+	// Announcements: received by everybody, sent by administrators and
+	// resellers.
+	mux.Handle("GET /api/v1/announcements", s.requireAuth(http.HandlerFunc(s.handleAnnouncements)))
+	mux.Handle("POST /api/v1/announcements", s.requireAuth(http.HandlerFunc(s.handleAnnouncements)))
+
 	mux.Handle("GET /api/v1/ftp", accounts(http.HandlerFunc(s.handleFTP)))
 	mux.Handle("POST /api/v1/ftp", accounts(http.HandlerFunc(s.handleFTP)))
 	mux.Handle("PATCH /api/v1/ftp/{id}", accounts(http.HandlerFunc(s.handleFTPAccount)))

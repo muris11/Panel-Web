@@ -45,6 +45,8 @@ unless it says otherwise. "Agent" is the private call the panel makes over
 | Backups: list archives on disk, create, restore, delete | `resources.go`, `files.go` | `backup.create`, `backup.restore`, `fs.list` |
 | Files: browse, read, write, mkdir, rename, chmod, delete, compress, extract, search | `files.go` | `fs.*` |
 | Server (admin): services, firewall rules, hostname, timezone, bandwidth | `system.go` | `service.*`, `firewall.status`, `system.*`, `usage.bandwidth` |
+| Tickets between an account and whoever answers it | `support.go` | none |
+| Announcements to a role, or to a reseller's own accounts | `support.go` | none |
 
 ## Deliberate differences from the Laravel panel
 
@@ -82,9 +84,12 @@ Honest list, roughly in the order that matters.
    panel installs beside it on `:2223`. Retiring the PHP panel means removing
    its queue worker, and only one panel may drain `tasks` at a time: Laravel
    encrypts `tasks.payload`, this panel writes plain JSON.
-4. **SSH follows the account's own package.** The Laravel panel also consults
-   the reseller's package, which needs the `reseller_packages` table this schema
-   does not create yet; an account is judged by its own package only.
+4. **SSH needs both packages to allow it, as in Laravel.** The account's own
+   package has to include SSH and so does the reseller package of its owner
+   (`store.AllowsSSH`); an account with no package at all is not restricted,
+   which is what `App\Support\AccountLimits::allowsSsh` answers too.
+   `reseller_packages` is created by `0008_support.sql` so an existing database
+   keeps the rows the Laravel panel wrote.
 
 5. **Some scheduled work still lives in Laravel commands.** Traffic, resources
    and certificate expiry are collected by the panel itself now
@@ -92,11 +97,12 @@ Honest list, roughly in the order that matters.
    Quota application, DNS sync, alerts, drift and update checks are still
    `app/Console/Commands` and are not run by this panel yet.
 6. **Not rebuilt**: reseller and hosting package editing (packages are read
-   only), account import/transfer, announcements, tickets, branding, brute-force
-   and WAF editing, mail queue, antivirus quarantine, server/system/remote
-   backup schedules and retention, statistics and login history screens,
-   python/node app management, PHP extension toggles, redirects, phpMyAdmin and
-   Roundcube single sign-on, passkeys, the WHMCS API.
+   only), account import/transfer, ticket attachments, the email that an
+   announcement would send (`emailed` is recorded, no mail is dispatched),
+   branding, brute-force and WAF editing, mail queue, antivirus quarantine,
+   server/system/remote backup schedules and retention, statistics and login
+   history screens, python/node app management, PHP extension toggles,
+   redirects, phpMyAdmin and Roundcube single sign-on, passkeys, the WHMCS API.
 7. **No Indonesian strings.** The Laravel panel ships `APP_LOCALE=id`; this one
    is English only.
 8. **No CI.** `go test ./...` needs a real MariaDB through `MURISCORE_TEST_DSN`, and

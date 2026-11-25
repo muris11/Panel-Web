@@ -33,17 +33,16 @@
 
 set -eu
 
-case "${1:-}" in
-    --*) BINARY= ;;
-    *) BINARY=${1:-} ;;
-esac
-
 MODE=install
+BINARY=
+NO_NGINX=0
 
 for argument in "$@"; do
     case "$argument" in
         --print-only) MODE=dry ;;
         --no-nginx) NO_NGINX=1 ;;
+        --*) ;;
+        *) [ -n "$BINARY" ] || BINARY=$argument ;;
     esac
 done
 
@@ -54,11 +53,45 @@ SERVICE=muriscore-panel
 BIN_DIR=/usr/local/bin
 CONF_DIR=/etc/muriscore
 ENV_FILE="$CONF_DIR/muriscore.env"
-LISTEN=${MURISCORE_LISTEN:-127.0.0.1:8080}
+LISTEN=${MURISCORE_LISTEN:-}
 DATABASE_NAME=rayxo
-NO_NGINX=${NO_NGINX:-0}
 
 say() { printf '\n== %s\n' "$*"; }
+
+# load_env reads KEY="value" lines from the panel's env file without sourcing
+# it. Sourcing would run a value that contains a bracket, and the database DSN
+# of a unix socket does: user:pass@unix(/run/mysqld/mysqld.sock)/name.
+load_env() {
+    [ -f "$ENV_FILE" ] || return 0
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            MURISCORE_*=*)
+                key=${line%%=*}
+                value=${line#*=}
+                value=${value#\"}
+                value=${value%\"}
+                export "$key=$value"
+                ;;
+        esac
+    done < "$ENV_FILE"
+}
+
+# as_panel runs a panel subcommand as the service account with the settings
+# the unit would give it. sudo clears the environment, so they are repeated
+# here instead of relying on load_env's exports surviving it.
+as_panel() {
+    sudo -u "$PANEL_USER" -H env \
+        MURISCORE_DB_DSN="$MURISCORE_DB_DSN" \
+        MURISCORE_LISTEN="$LISTEN" \
+        MURISCORE_AGENT_DRIVER="socket" \
+        MURISCORE_AGENT_SOCKET="$AGENT_SOCKET" \
+        MURISCORE_SECURE_COOKIES="true" \
+        MURISCORE_PUBLIC_IP="${MURISCORE_PUBLIC_IP:-}" \
+        MURISCORE_NAMESERVERS="${MURISCORE_NAMESERVERS:-}" \
+        MURISCORE_APP_KEY="${MURISCORE_APP_KEY:-}" \
+        "$BIN_DIR/$SERVICE" "$@"
+}
 note() { printf '   %s\n' "$*"; }
 die() {
     printf '\n!! %s\n' "$*" >&2
@@ -207,6 +240,54 @@ else
     note "agent socket not found yet at $AGENT_SOCKET (the doctor will report it)"
 fi
 
+# The socket's group decides who may open it; rayxod then checks the caller's
+# user ID against --allow-user, and accepts exactly one besides root. A panel
+# called muriscore is refused by an agent that only allows rayxo, so point the
+# unit at this user when the Laravel panel is gone (it needs that name).
+say "agent permission"
+AGENT_UNIT=$(systemctl list-unit-files 'rayxod*.service' --no-legend 2>/dev/null | awk '{print $1}' | head -n 1 || true)
+
+if [ -z "$AGENT_UNIT" ] || ! systemctl cat "$AGENT_UNIT" >/dev/null 2>&1; then
+    note "no rayxod unit to read; $AGENT_UNIT start it with --allow-user $PANEL_USER"
+else
+    AGENT_ALLOWED=$(systemctl cat "$AGENT_UNIT" | sed -n 's/.*--allow-user[= ]\([^ ]*\).*/\1/p' | head -n 1)
+
+    if [ "$AGENT_ALLOWED" = "$PANEL_USER" ]; then
+        note "$AGENT_UNIT already lets $PANEL_USER call the agent"
+    elif [ -f /var/www/rayxo/artisan ]; then
+        note "rayxod allows $AGENT_ALLOWED, and the Laravel panel still runs as that user"
+        note "when it is retired, change --allow-user to $PANEL_USER in $AGENT_UNIT"
+    else
+        AGENT_BINARY=$(systemctl cat "$AGENT_UNIT" | sed -n 's/^ExecStart=\([^ ]*\).*/\1/p' | head -n 1)
+        AGENT_TRANSFER=$(systemctl cat "$AGENT_UNIT" | sed -n 's/.*--transfer-dir[= ]\([^ ]*\).*/\1/p' | head -n 1)
+        AGENT_BACKUP=$(systemctl cat "$AGENT_UNIT" | sed -n 's/.*--backup-dir[= ]\([^ ]*\).*/\1/p' | head -n 1)
+        AGENT_DROPIN=/etc/systemd/system/$AGENT_UNIT.d/panel-user.conf
+
+        note "$AGENT_UNIT allows $AGENT_ALLOWED; pointing it at $PANEL_USER"
+
+        if [ "$MODE" = dry ]; then
+            note "would write $AGENT_DROPIN and restart $AGENT_UNIT"
+        else
+            mkdir -p "$(dirname "$AGENT_DROPIN")"
+            cat > "$AGENT_DROPIN" <<DROPIN
+# Written by deploy/install.sh of the MurisCore panel.
+[Service]
+ExecStart=
+ExecStart=$AGENT_BINARY --socket $AGENT_SOCKET --allow-user $PANEL_USER \\
+    --socket-group ${AGENT_GROUP:-$PANEL_USER} \\
+    --transfer-dir ${AGENT_TRANSFER:-/var/lib/rayxo/transfer} \\
+    --backup-dir ${AGENT_BACKUP:-/var/lib/rayxo/backups}
+DROPIN
+            chmod 0644 "$AGENT_DROPIN"
+            systemctl daemon-reload
+            systemctl restart "$AGENT_UNIT"
+            sleep 1
+            systemctl is-active --quiet "$AGENT_UNIT" ||
+                note "$AGENT_UNIT did not come back; check: journalctl -u $AGENT_UNIT -n 20"
+        fi
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # Database. Three ways, in order of trust: an explicit DSN, the DSN of the
 # Laravel panel already installed, or a database this script creates.
@@ -233,6 +314,18 @@ if [ -z "$DB_DSN" ] && [ -r /var/www/rayxo/.env ]; then
     fi
 fi
 
+if [ -z "$DB_DSN" ] && [ -r "$ENV_FILE" ]; then
+    # A second run: keep the settings this script wrote the first time, so the
+    # database user and the env file cannot drift apart.
+    load_env
+
+    if [ -n "${MURISCORE_DB_DSN:-}" ]; then
+        DB_DSN=$MURISCORE_DB_DSN
+        DB_SOURCE=$ENV_FILE
+        note "reusing the database settings in $ENV_FILE"
+    fi
+fi
+
 if [ -z "$DB_DSN" ]; then
     MYSQL=
     for candidate in mariadb mysql; do
@@ -253,12 +346,19 @@ if [ -z "$DB_DSN" ]; then
         run "$MYSQL" --protocol=socket --socket="$MYSQL_SOCKET" -u root -e "
             CREATE DATABASE IF NOT EXISTS \`$DATABASE_NAME\`
                 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE USER IF NOT EXISTS '$PANEL_USER'@'localhost' IDENTIFIED BY '$password';
+            CREATE USER IF NOT EXISTS '$PANEL_USER'@'localhost';
+            ALTER USER '$PANEL_USER'@'localhost' IDENTIFIED BY '$password';
             GRANT ALL PRIVILEGES ON \`$DATABASE_NAME\`.* TO '$PANEL_USER'@'localhost';
             FLUSH PRIVILEGES;"
 
         DB_DSN="$PANEL_USER:$password@unix($MYSQL_SOCKET)/$DATABASE_NAME?parseTime=true&loc=UTC"
         DB_SOURCE="created by this installer"
+    elif [ "$MODE" = dry ]; then
+        # A dry run is not root, so it cannot log in over the socket. Say what
+        # would happen instead of refusing to draw the rest of the plan.
+        note "would create database $DATABASE_NAME and user $PANEL_USER over the MariaDB socket"
+        DB_DSN="$PANEL_USER:generated@unix(/run/mysqld/mysqld.sock)/$DATABASE_NAME?parseTime=true&loc=UTC"
+        DB_SOURCE="would be created by this installer"
     else
         die "no database: set MURISCORE_DB_DSN, or make sure MariaDB is running as root over its socket"
     fi
@@ -266,11 +366,56 @@ fi
 
 note "database $DATABASE_NAME, from $DB_SOURCE"
 
+# A DSN inherited from an earlier run can hold a password the database no
+# longer accepts (MariaDB reset, user recreated). When root is reachable over
+# its socket, put the stored password back rather than failing at migrate.
+if [ "$MODE" != dry ] && [ "$DB_SOURCE" = "$ENV_FILE" ]; then
+    dsn_user=${DB_DSN%%:*}
+    dsn_rest=${DB_DSN#*:}
+    dsn_pass=${dsn_rest%%@*}
+
+    MYSQL=
+    for candidate in mariadb mysql; do
+        have "$candidate" && MYSQL=$candidate && break
+    done
+
+    for socket in /run/mysqld/mysqld.sock /var/lib/mysql/mysql.sock /run/mysql/mysql.sock; do
+        [ -S "$socket" ] || continue
+        "$MYSQL" --protocol=socket --socket="$socket" -u root -e 'SELECT 1' >/dev/null 2>&1 || continue
+
+        if ! "$MYSQL" --protocol=socket --socket="$socket" -u "$dsn_user" -p"$dsn_pass" -e 'SELECT 1' >/dev/null 2>&1; then
+            note "the password in $ENV_FILE no longer works, putting it back"
+            "$MYSQL" --protocol=socket --socket="$socket" -u root -e "
+                ALTER USER '$dsn_user'@'localhost' IDENTIFIED BY '$dsn_pass';" || true
+        fi
+        break
+    done
+fi
+
 # ---------------------------------------------------------------------------
 # Certificate and port. The Laravel panel already owns 2222 on a server that
 # has one, so a second panel gets 2223 instead of fighting over the port.
 
 say "certificate and port"
+
+# The panel listens on loopback behind Nginx. An earlier run of this script
+# already chose a port and Nginx points at it; keep it. On a fresh install,
+# something else may hold 8080 (another panel, a dev server), so take the next
+# free port instead of crash-looping under systemd.
+if [ -z "$LISTEN" ] && [ -r "$ENV_FILE" ]; then
+    load_env
+    LISTEN=${MURISCORE_LISTEN:-}
+fi
+
+if [ -z "$LISTEN" ]; then
+    port=8080
+    while have ss && ss -ltn 2>/dev/null | grep -q "[:.]$port "; do
+        [ "$port" -ge 8090 ] && break
+        port=$((port + 1))
+    done
+    LISTEN=127.0.0.1:$port
+    [ "$port" = 8080 ] || note "127.0.0.1:8080 is already listening, using 127.0.0.1:$port"
+fi
 PORT=${MURISCORE_PANEL_PORT:-}
 if [ -z "$PORT" ]; then
     PORT=2222
@@ -309,15 +454,15 @@ else
     {
         echo "# Written by deploy/install.sh on $(date -u +%Y-%m-%dT%H:%M:%SZ)."
         echo "# 0600: it holds the database password and possibly the APP_KEY."
-        echo "MURISCORE_DB_DSN=$DB_DSN"
-        echo "MURISCORE_LISTEN=$LISTEN"
-        echo "MURISCORE_AGENT_DRIVER=socket"
-        echo "MURISCORE_AGENT_SOCKET=$AGENT_SOCKET"
-        echo "MURISCORE_SECURE_COOKIES=true"
-        echo "MURISCORE_PUBLIC_IP=${MURISCORE_PUBLIC_IP:-}"
-        echo "MURISCORE_NAMESERVERS=${MURISCORE_NAMESERVERS:-}"
+        echo "MURISCORE_DB_DSN=\"$DB_DSN\""
+        echo "MURISCORE_LISTEN=\"$LISTEN\""
+        echo "MURISCORE_AGENT_DRIVER=\"socket\""
+        echo "MURISCORE_AGENT_SOCKET=\"$AGENT_SOCKET\""
+        echo "MURISCORE_SECURE_COOKIES=\"true\""
+        echo "MURISCORE_PUBLIC_IP=\"${MURISCORE_PUBLIC_IP:-}\""
+        echo "MURISCORE_NAMESERVERS=\"${MURISCORE_NAMESERVERS:-}\""
         if [ -n "${MURISCORE_APP_KEY:-${RAYXO_APP_KEY:-}}" ]; then
-            echo "MURISCORE_APP_KEY=${MURISCORE_APP_KEY:-${RAYXO_APP_KEY:-}}"
+            echo "MURISCORE_APP_KEY=\"${MURISCORE_APP_KEY:-${RAYXO_APP_KEY:-}}\""
         fi
     } > "$ENV_FILE"
 
@@ -334,12 +479,9 @@ say "schema"
 if [ "$MODE" = dry ]; then
     note "would run: $SERVICE migrate"
 else
-    set -a
-    # shellcheck disable=SC1090
-    . "$ENV_FILE"
-    set +a
+    load_env
 
-    sudo -u "$PANEL_USER" -H "$BIN_DIR/$SERVICE" migrate
+    as_panel migrate
 fi
 
 # ---------------------------------------------------------------------------
@@ -360,6 +502,9 @@ elif [ -d /run/systemd/system ]; then
 
     systemctl daemon-reload
     systemctl enable --now "$SERVICE.service"
+    # The unit may already be running with the previous settings; restart so a
+    # new port or password is picked up.
+    systemctl restart "$SERVICE.service"
     sleep 2
     systemctl is-active --quiet "$SERVICE.service" ||
         die "$SERVICE did not start; run: journalctl -u $SERVICE -n 50 --no-pager"
@@ -442,7 +587,7 @@ fi
 if [ "$MODE" = install ] && [ -d /run/systemd/system ]; then
     say "doctor"
     # shellcheck disable=SC1090
-    ( set -a; . "$ENV_FILE"; set +a; sudo -u "$PANEL_USER" -H "$BIN_DIR/$SERVICE" doctor ) || true
+    ( load_env; as_panel doctor ) || true
 
     if have curl; then
         health=$(curl -fsS --max-time 5 "http://$LISTEN/api/v1/health" 2>/dev/null || true)

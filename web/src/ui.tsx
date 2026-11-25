@@ -116,6 +116,24 @@ export function IconKey({ className = 'nav-icon' }: IconProps) {
     );
 }
 
+export function IconTicket({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <path d="M4 9V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a3 3 0 0 0 0 6v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a3 3 0 0 0 0-6z" />
+            <path d="M13 5v2M13 11v2M13 17v2" />
+        </svg>
+    );
+}
+
+export function IconMegaphone({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <path d="M4 10v4a1 1 0 0 0 1 1h2l6 4V5L7 9H5a1 1 0 0 0-1 1z" />
+            <path d="M17 8.5a5 5 0 0 1 0 7" />
+        </svg>
+    );
+}
+
 export function IconPlus({ className = '' }: IconProps) {
     return (
         <svg viewBox="0 0 24 24" className={className} width="15" height="15" aria-hidden="true" {...stroke}>
