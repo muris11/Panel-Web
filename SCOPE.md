@@ -82,22 +82,26 @@ Honest list, roughly in the order that matters.
    panel installs beside it on `:2223`. Retiring the PHP panel means removing
    its queue worker, and only one panel may drain `tasks` at a time: Laravel
    encrypts `tasks.payload`, this panel writes plain JSON.
-4. **Some scheduled work still lives in Laravel commands.** Traffic, resources
+4. **SSH follows the account's own package.** The Laravel panel also consults
+   the reseller's package, which needs the `reseller_packages` table this schema
+   does not create yet; an account is judged by its own package only.
+
+5. **Some scheduled work still lives in Laravel commands.** Traffic, resources
    and certificate expiry are collected by the panel itself now
    (`internal/collector`, every fifteen minutes or `muriscore-panel collect`).
    Quota application, DNS sync, alerts, drift and update checks are still
    `app/Console/Commands` and are not run by this panel yet.
-5. **Not rebuilt**: reseller and hosting package editing (packages are read
+6. **Not rebuilt**: reseller and hosting package editing (packages are read
    only), account import/transfer, announcements, tickets, branding, brute-force
    and WAF editing, mail queue, antivirus quarantine, server/system/remote
    backup schedules and retention, statistics and login history screens,
-   python/node app management, PHP extension toggles, redirects, SSH key
-   management, phpMyAdmin/Roundcube single sign-on, passkeys, the WHMCS API.
-6. **No Indonesian strings.** The Laravel panel ships `APP_LOCALE=id`; this one
+   python/node app management, PHP extension toggles, redirects, phpMyAdmin and
+   Roundcube single sign-on, passkeys, the WHMCS API.
+7. **No Indonesian strings.** The Laravel panel ships `APP_LOCALE=id`; this one
    is English only.
-7. **No CI.** `go test ./...` needs a real MariaDB through `RAYXO_TEST_DSN`, and
+8. **No CI.** `go test ./...` needs a real MariaDB through `MURISCORE_TEST_DSN`, and
    nothing runs it on push yet.
-8. **Small known edges.** The file manager has no drag-and-drop upload or
+9. **Small known edges.** The file manager has no drag-and-drop upload or
    syntax highlighting; a subdomain does not yet pick its parent zone in the
    drawer; mail has no quota or send-limit field; database size is only what the
    last collection run measured.

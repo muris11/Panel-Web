@@ -140,6 +140,11 @@ func (s *Server) Handler() http.Handler {
 	mux.Handle("DELETE /api/v1/redis/{id}", accounts(http.HandlerFunc(s.handleRedisAction)))
 
 	// FTP logins.
+	mux.Handle("GET /api/v1/ssh", accounts(http.HandlerFunc(s.handleSSH)))
+	mux.Handle("PATCH /api/v1/ssh", accounts(http.HandlerFunc(s.handleSSH)))
+	mux.Handle("POST /api/v1/ssh/keys", accounts(http.HandlerFunc(s.handleSSHKeys)))
+	mux.Handle("DELETE /api/v1/ssh/keys/{id}", accounts(http.HandlerFunc(s.handleSSHKey)))
+
 	mux.Handle("GET /api/v1/ftp", accounts(http.HandlerFunc(s.handleFTP)))
 	mux.Handle("POST /api/v1/ftp", accounts(http.HandlerFunc(s.handleFTP)))
 	mux.Handle("PATCH /api/v1/ftp/{id}", accounts(http.HandlerFunc(s.handleFTPAccount)))

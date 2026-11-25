@@ -51,6 +51,7 @@ out.
 | Redis          | one cache instance per account, password rotation, memory ceiling, removal    |
 | FTP            | logins pinned to one account and folder, `$6$` crypt passwords                |
 | Files          | browse, read, write, mkdir, delete, compress and extract through the agent    |
+| SSH            | turn a shell on when the package has one, add and remove public keys          |
 | Cron           | per-account jobs, applied as a whole crontab                                  |
 | Backups        | list archives from disk, start a backup, restore, delete                      |
 | Server         | service status/restart/reload, firewall rules, hostname and timezone          |

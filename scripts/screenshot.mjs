@@ -40,6 +40,7 @@ const screens = [
     { name: '13-account-files', path: '/accounts/siti/files' },
     { name: '14-account-cron', path: '/accounts/siti/cron' },
     { name: '15-account-backups', path: '/accounts/siti/backups' },
+    { name: '26-account-ssh', path: '/accounts/siti/ssh' },
     { name: '16-new-website', path: '/domains', click: 'New website' },
     { name: '17-new-mailbox', path: '/mail', click: 'Manage' },
     { name: '18-new-database', path: '/databases', click: 'New database' },

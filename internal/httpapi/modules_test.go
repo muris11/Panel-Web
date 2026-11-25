@@ -1,10 +1,14 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/base64"
+	"encoding/binary"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -867,5 +871,123 @@ func TestUsageShowsCollectedTraffic(t *testing.T) {
 
 	if _, ok := answer.Body["collectors"]; !ok {
 		t.Error("the answer has no collectors list, so the page cannot say how fresh it is")
+	}
+}
+
+// ed25519PublicKey builds a well-formed OpenSSH public key line, because a
+// hand-typed one would test the parser's mistakes instead of the page.
+func ed25519PublicKey(seed byte, comment string) string {
+	field := func(value []byte) []byte {
+		out := make([]byte, 4, 4+len(value))
+		binary.BigEndian.PutUint32(out, uint32(len(value)))
+
+		return append(out, value...)
+	}
+
+	blob := append(field([]byte("ssh-ed25519")), field(bytes.Repeat([]byte{seed}, 32))...)
+
+	return "ssh-ed25519 " + base64.StdEncoding.EncodeToString(blob) + " " + comment
+}
+
+func TestSSHKeysBelongToTheAccount(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	before := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/ssh?username=siti", nil, "")
+	if before.Status != http.StatusOK {
+		t.Fatalf("reading SSH answered %d: %v", before.Status, before.Body)
+	}
+
+	if keys, _ := before.Body["keys"].([]any); len(keys) != 0 {
+		t.Fatalf("a new account already has keys: %v", before.Body)
+	}
+
+	access, _ := before.Body["access"].(map[string]any)
+	if access["enabled"] != false {
+		t.Errorf("access = %v, want SSH off", access)
+	}
+
+	created := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/ssh/keys", map[string]any{
+		"username":  "siti",
+		"name":      "laptop",
+		"publicKey": ed25519PublicKey(3, "siti@laptop"),
+	}, csrf)
+
+	if created.Status != http.StatusCreated {
+		t.Fatalf("adding a key answered %d: %v", created.Status, created.Body)
+	}
+
+	// The same key twice is a conflict, not a second row.
+	again := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/ssh/keys", map[string]any{
+		"username":  "siti",
+		"name":      "laptop again",
+		"publicKey": ed25519PublicKey(3, "siti@laptop"),
+	}, csrf)
+
+	if again.Status != http.StatusConflict {
+		t.Fatalf("adding the same key again answered %d: %v", again.Status, again.Body)
+	}
+
+	listed := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/ssh?username=siti", nil, "")
+	keys, _ := listed.Body["keys"].([]any)
+
+	if len(keys) != 1 {
+		t.Fatalf("the page shows %d keys, want 1: %v", len(keys), listed.Body)
+	}
+
+	key, _ := keys[0].(map[string]any)
+	fingerprint, _ := key["Fingerprint"].(string)
+
+	if !strings.HasPrefix(fingerprint, "SHA256:") {
+		t.Errorf("fingerprint = %q", fingerprint)
+	}
+
+	// The key write is queued on its own, after the account already exists.
+	drain(t, queue, 1)
+
+	// A private key must be refused with a message that says so.
+	private := call(t, httpClient, http.MethodPost, server.URL+"/api/v1/ssh/keys", map[string]any{
+		"username":  "siti",
+		"name":      "oops",
+		"publicKey": "-----BEGIN OPENSSH PRIVATE KEY-----\nabc\n-----END OPENSSH PRIVATE KEY-----",
+	}, csrf)
+
+	if private.Status != http.StatusUnprocessableEntity {
+		t.Fatalf("a private key answered %d: %v", private.Status, private.Body)
+	}
+
+	id, _ := key["ID"].(float64)
+
+	removed := call(t, httpClient, http.MethodDelete, server.URL+"/api/v1/ssh/keys/"+itoa(int64(id)), nil, csrf)
+	if removed.Status != http.StatusNoContent {
+		t.Fatalf("removing the key answered %d: %v", removed.Status, removed.Body)
+	}
+
+	after := call(t, httpClient, http.MethodGet, server.URL+"/api/v1/ssh?username=siti", nil, "")
+	if keys, _ := after.Body["keys"].([]any); len(keys) != 0 {
+		t.Errorf("the key is still listed: %v", after.Body)
+	}
+}
+
+// A package without SSH must be refused before anything is queued, so the
+// account is not told its shell is coming when it never can.
+func TestSSHNeedsAPackageThatIncludesIt(t *testing.T) {
+	server, st, queue := harness(t)
+	httpClient, csrf := signIn(t, server, st)
+
+	provision(t, server, st, queue, httpClient, csrf, "siti")
+
+	answer := call(t, httpClient, http.MethodPatch, server.URL+"/api/v1/ssh", map[string]any{
+		"username": "siti",
+		"enabled":  true,
+	}, csrf)
+	if answer.Status != http.StatusForbidden {
+		t.Fatalf("turning SSH on without a package answered %d: %v", answer.Status, answer.Body)
+	}
+
+	if queue.RunOnce(context.Background()) {
+		t.Error("a refused change queued work for the agent")
 	}
 }

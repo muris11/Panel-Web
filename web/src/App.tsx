@@ -14,6 +14,7 @@ import { DomainDetail } from './pages/DomainDetail';
 import { Domains } from './pages/Domains';
 import { Files, FilesPicker } from './pages/Files';
 import { FTP } from './pages/FTP';
+import { Ssh } from './pages/Ssh';
 import { Login } from './pages/Login';
 import { Mail } from './pages/Mail';
 import { Postgres } from './pages/Postgres';
@@ -114,6 +115,16 @@ function Screen({ path, onToast }: { path: string; onToast: (message: string, to
 
     if (path === '/ftp') {
         return <FTP onToast={onToast} />;
+    }
+
+    if (path === '/ssh') {
+        return <Ssh onToast={onToast} />;
+    }
+
+    const sshMatch = /^\/accounts\/([^/]+)\/ssh\/?$/.exec(path);
+
+    if (sshMatch?.[1]) {
+        return <Ssh username={decodeURIComponent(sshMatch[1])} onToast={onToast} />;
     }
 
     if (path === '/files' || path === '/files/') {

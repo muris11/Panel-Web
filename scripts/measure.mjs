@@ -29,6 +29,7 @@ const screens = [
     '/accounts/siti/files',
     '/accounts/siti/cron',
     '/accounts/siti/backups',
+    '/accounts/siti/ssh',
     '/domains',
     '/domains/2',
     '/mail',

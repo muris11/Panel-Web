@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"strings"
 	"time"
 )
 
@@ -262,4 +264,81 @@ func (s *Store) Tasks(ctx context.Context, filter TaskFilter) ([]Task, error) {
 	}
 
 	return tasks, wrap("list the tasks", rows.Err())
+}
+
+// LatestTaskFor returns the newest task of one account whose action is one of
+// the names given, so a screen can say whether its last change is still
+// running or why it failed.
+func (s *Store) LatestTaskFor(ctx context.Context, userID int64, actions ...string) (Task, bool, error) {
+	if len(actions) == 0 {
+		return Task{}, false, nil
+	}
+
+	placeholders := make([]string, len(actions))
+	args := []any{userID}
+
+	for i, action := range actions {
+		placeholders[i] = "?"
+		args = append(args, action)
+	}
+
+	var (
+		task     Task
+		owner    sql.NullInt64
+		actor    sql.NullInt64
+		payload  sql.NullString
+		output   sql.NullString
+		errText  sql.NullString
+		status   string
+		created  sql.NullTime
+		started  sql.NullTime
+		finished sql.NullTime
+		username sql.NullString
+	)
+
+	err := s.db.QueryRowContext(ctx, `
+		SELECT t.id, t.user_id, t.actor_id, t.action, t.payload, t.status, t.attempts,
+			t.output, t.error, t.created_at, t.started_at, t.finished_at,
+			COALESCE(u.username, '')
+		FROM tasks t
+		LEFT JOIN users u ON u.id = t.user_id
+		WHERE t.user_id = ? AND t.action IN (`+strings.Join(placeholders, ", ")+`)
+		ORDER BY t.created_at DESC, t.id DESC
+		LIMIT 1`, args...).Scan(&task.ID, &owner, &actor, &task.Action, &payload, &status, &task.Attempts,
+		&output, &errText, &created, &started, &finished, &username)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Task{}, false, nil
+	}
+
+	if err != nil {
+		return Task{}, false, wrap("read the last task", err)
+	}
+
+	if owner.Valid {
+		task.UserID = &owner.Int64
+	}
+
+	if actor.Valid {
+		task.ActorID = &actor.Int64
+	}
+
+	task.Payload = payload.String
+	task.Output = output.String
+	task.Error = errText.String
+	task.Status = TaskStatus(status)
+	task.Username = username.String
+
+	if created.Valid {
+		task.CreatedAt = created.Time
+	}
+
+	if started.Valid {
+		task.StartedAt = &started.Time
+	}
+
+	if finished.Valid {
+		task.FinishedAt = &finished.Time
+	}
+
+	return task, true, nil
 }

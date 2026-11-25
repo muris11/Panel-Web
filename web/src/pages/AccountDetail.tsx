@@ -145,6 +145,9 @@ export function AccountDetail({
                 <a className="tab" {...linkProps('/ftp')}>
                     FTP
                 </a>
+                <a className="tab" {...linkProps(`/accounts/${username}/ssh`)}>
+                    SSH
+                </a>
             </nav>
 
             {account?.status === 'suspended' && account.reason ? (

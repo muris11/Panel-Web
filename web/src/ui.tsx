@@ -107,6 +107,15 @@ export function IconLogout({ className = 'nav-icon' }: IconProps) {
     );
 }
 
+export function IconKey({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <circle cx="8" cy="15" r="4" />
+            <path d="M10.8 12.2 20 3M16 7l3 3M13 10l2.5 2.5" />
+        </svg>
+    );
+}
+
 export function IconPlus({ className = '' }: IconProps) {
     return (
         <svg viewBox="0 0 24 24" className={className} width="15" height="15" aria-hidden="true" {...stroke}>

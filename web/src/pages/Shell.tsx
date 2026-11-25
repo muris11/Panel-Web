@@ -8,6 +8,7 @@ import {
     IconFolder,
     IconGauge,
     IconGlobe,
+    IconKey,
     IconMail,
     IconServer,
     IconSettings,
@@ -33,6 +34,9 @@ export function Shell({ children }: { children: ReactNode }) {
         { to: '/postgres', label: 'PostgreSQL', icon: <IconDatabase /> },
         { to: '/redis', label: 'Redis', icon: <IconServer /> },
         { to: '/ftp', label: 'FTP', icon: <IconFolder /> },
+        // A hosting account reaches its own SSH here; an operator opens the
+        // account and uses the SSH tab, because the page needs a username.
+        ...(user.role === 'user' ? [{ to: '/ssh', label: 'SSH', icon: <IconKey /> }] : []),
     ];
 
     const entries: NavEntry[] = [
