@@ -51,6 +51,8 @@ out.
 | Redis          | one cache instance per account, password rotation, memory ceiling, removal    |
 | FTP            | logins pinned to one account and folder, `$6$` crypt passwords                |
 | Packages       | create, edit and delete hosting packages; a changed quota is re-applied        |
+| Node apps      | one long-running Node.js process behind a website, port auto-allocated          |
+| PHP versions   | the agent's installed versions fill a dropdown on every website form            |
 | Files          | browse, read, write, mkdir, delete, compress and extract through the agent    |
 | SSH            | turn a shell on when the package has one, add and remove public keys          |
 | Tickets        | an account asks for help; an administrator or the owning reseller answers     |

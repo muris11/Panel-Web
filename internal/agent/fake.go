@@ -227,6 +227,12 @@ func (f *Fake) Call(_ context.Context, method string, params any) (json.RawMessa
 	case "redis.deprovision", "redis.check", "redis.service", "redis.status", "redis.conf":
 		answer = map[string]any{"done": true, "simulated": true}
 
+	case "php.versions":
+		answer = map[string]any{"versions": []string{"8.1", "8.2", "8.3", "8.4"}}
+
+	case "nodeapp.status":
+		answer = map[string]any{"running": true}
+
 	case "cron.apply", "ftp.ensure_dir", "backup.create", "backup.restore":
 		answer = map[string]any{"done": true, "simulated": true}
 

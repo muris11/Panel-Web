@@ -261,8 +261,15 @@ func (s *Store) ListAccounts(ctx context.Context, owner *User, limit, offset int
 	args := []any{}
 
 	if owner != nil && !owner.IsAdmin() {
-		query += ` AND u.owner_id = ?`
-		args = append(args, owner.ID)
+		if owner.Role == RoleReseller {
+			query += ` AND u.owner_id = ?`
+			args = append(args, owner.ID)
+		} else {
+			// A plain account is its own single row; its owner_id points at
+			// whoever created it, so the reseller clause would hide it.
+			query += ` AND u.id = ?`
+			args = append(args, owner.ID)
+		}
 	}
 
 	query += ` ORDER BY u.id DESC LIMIT ? OFFSET ?`

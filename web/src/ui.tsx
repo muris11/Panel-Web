@@ -124,6 +124,15 @@ export function IconKey({ className = 'nav-icon' }: IconProps) {
     );
 }
 
+export function IconNode({ className = 'nav-icon' }: IconProps) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+            <path d="M12 3l7.5 4.3v9.4L12 21l-7.5-4.3V7.3z" />
+            <path d="M9.5 14.5v-5l2.5 3 2.5-3v5" />
+        </svg>
+    );
+}
+
 export function IconPackage({ className = 'nav-icon' }: IconProps) {
     return (
         <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>

@@ -177,11 +177,19 @@ function AddWebsite({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
     const [username, setUsername] = useState('');
     const [name, setName] = useState('');
     const [kind, setKind] = useState('domain');
+    const [phpVersion, setPHPVersion] = useState('');
+    const [versions, setVersions] = useState<string[]>([]);
     const [fields, setFields] = useState<Record<string, string>>({});
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
+        api<{ versions: string[] }>('/php/versions')
+            .then((answer) => setVersions(answer.versions ?? []))
+            .catch(() => {
+                // Without the agent the site keeps the server default.
+            });
+
         api<{ accounts: Account[] }>('/accounts?limit=200').then((response) => {
             setAccounts(response.accounts);
             const first = response.accounts[0];
@@ -199,7 +207,7 @@ function AddWebsite({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
         setFields({});
 
         try {
-            await api('/domains', { method: 'POST', body: { username, name, type: kind } });
+            await api('/domains', { method: 'POST', body: { username, name, type: kind, phpVersion } });
             onAdded();
         } catch (thrown) {
             setError(errorMessage(thrown));
@@ -246,6 +254,23 @@ function AddWebsite({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
                     error={fields.name}
                     required
                 />
+
+                <label className="field">
+                    <span className="field-label">PHP version</span>
+                    <select
+                        className="input"
+                        value={phpVersion}
+                        onChange={(event) => setPHPVersion(event.target.value)}
+                    >
+                        <option value="">Server default</option>
+                        {versions.map((version) => (
+                            <option key={version} value={version}>
+                                PHP {version}
+                            </option>
+                        ))}
+                    </select>
+                    <span className="field-hint">Blank uses the version the server ships with.</span>
+                </label>
 
                 <label className="field">
                     <span className="field-label">Type</span>

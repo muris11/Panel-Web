@@ -20,6 +20,7 @@ import { Announcements } from './pages/Announcements';
 import { Packages } from './pages/Packages';
 import { Login } from './pages/Login';
 import { Mail } from './pages/Mail';
+import { NodeApps } from './pages/Node';
 import { Postgres } from './pages/Postgres';
 import { Redis } from './pages/Redis';
 import { Server } from './pages/Server';
@@ -108,6 +109,10 @@ function Screen({ path, onToast }: { path: string; onToast: (message: string, to
 
     if (path === '/databases') {
         return <Databases onToast={onToast} />;
+    }
+
+    if (path === '/node') {
+        return <NodeApps />;
     }
 
     if (path === '/postgres') {

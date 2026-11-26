@@ -287,6 +287,25 @@ function WebsiteForm({
     const [phpVersion, setPHPVersion] = useState(domain.phpVersion ?? '');
     const [forceHttps, setForceHttps] = useState(Boolean(domain.sslStatus === 'active'));
     const [documentRoot, setDocumentRoot] = useState(domain.documentRoot ?? '');
+    const [versions, setVersions] = useState<string[] | null>(null);
+
+    useEffect(() => {
+        let alive = true;
+
+        void api<{ versions: string[] }>('/php/versions')
+            .then((answer) => {
+                if (alive) {
+                    setVersions(answer.versions ?? []);
+                }
+            })
+            .catch(() => {
+                // The free-text field below stays usable without the agent.
+            });
+
+        return () => {
+            alive = false;
+        };
+    }, []);
 
     return (
         <form
@@ -297,12 +316,31 @@ function WebsiteForm({
             }}
         >
             <div className="grid-2 tight">
-                <Field
-                    label="PHP version"
-                    value={phpVersion}
-                    onChange={(event) => setPHPVersion(event.target.value)}
-                    placeholder="8.3, or blank for static files"
-                />
+                <label className="field">
+                    <span className="field-label">PHP version</span>
+                    {versions && versions.length > 0 ? (
+                        <select
+                            className="input"
+                            value={phpVersion}
+                            onChange={(event) => setPHPVersion(event.target.value)}
+                        >
+                            <option value="">Server default</option>
+                            {versions.map((version) => (
+                                <option key={version} value={version}>
+                                    PHP {version}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <input
+                            className="input"
+                            value={phpVersion}
+                            onChange={(event) => setPHPVersion(event.target.value)}
+                            placeholder="8.3, or blank for static files"
+                        />
+                    )}
+                    <span className="field-hint">Blank serves static files and PHP-free websites.</span>
+                </label>
                 <Field
                     label="Document root"
                     value={documentRoot}

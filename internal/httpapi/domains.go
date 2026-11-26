@@ -41,9 +41,10 @@ func (s *Server) handleDomains(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) createDomain(w http.ResponseWriter, r *http.Request, caller store.User) {
 	var request struct {
-		Username string `json:"username"`
-		Name     string `json:"name"`
-		Type     string `json:"type"`
+		Username   string `json:"username"`
+		Name       string `json:"name"`
+		Type       string `json:"type"`
+		PHPVersion string `json:"phpVersion"`
 	}
 
 	if !decodeJSON(w, r, &request) {
@@ -77,7 +78,12 @@ func (s *Server) createDomain(w http.ResponseWriter, r *http.Request, caller sto
 		return
 	}
 
-	domain, err := s.store.CreateDomain(r.Context(), account.ID, name, domainType, "8.4", domainType == "domain")
+	phpVersion := strings.TrimSpace(request.PHPVersion)
+	if phpVersion == "" {
+		phpVersion = "8.4"
+	}
+
+	domain, err := s.store.CreateDomain(r.Context(), account.ID, name, domainType, phpVersion, domainType == "domain")
 	if err != nil {
 		s.failStore(w, r, err)
 
@@ -99,7 +105,7 @@ func (s *Server) createDomain(w http.ResponseWriter, r *http.Request, caller sto
 	if _, err := s.queueFor(r, caller, account, "web.apply_domain", map[string]any{
 		"username":      account.Username,
 		"domain":        name,
-		"php_version":   "8.4",
+		"php_version":   phpVersion,
 		"document_root": "",
 	}); err != nil {
 		s.failStore(w, r, err)

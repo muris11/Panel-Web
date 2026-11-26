@@ -73,6 +73,12 @@ func mayManage(caller, account store.User) bool {
 		return true
 	}
 
+	// An account manages its own hosting; its owner_id points at the
+	// reseller above it, never at itself.
+	if caller.Role == store.RoleUser && account.ID == caller.ID {
+		return true
+	}
+
 	return account.OwnerID != nil && *account.OwnerID == caller.ID
 }
 

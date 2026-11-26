@@ -12,6 +12,7 @@ import {
     IconTicket,
     IconPackage,
     IconMegaphone,
+    IconNode,
     IconMail,
     IconServer,
     IconSettings,
@@ -35,11 +36,14 @@ export function Shell({ children }: { children: ReactNode }) {
             label: 'Hosting',
             entries: [
                 { to: '/', label: 'Overview', icon: <IconGauge /> },
-                { to: '/accounts', label: 'Accounts', icon: <IconUsers /> },
+                ...(user.role === 'admin' || user.role === 'reseller'
+                    ? [{ to: '/accounts', label: 'Accounts', icon: <IconUsers /> }]
+                    : []),
                 { to: '/domains', label: 'Domains', icon: <IconGlobe /> },
                 { to: '/mail', label: 'Mail', icon: <IconMail /> },
                 { to: '/databases', label: 'Databases', icon: <IconDatabase /> },
                 { to: '/postgres', label: 'PostgreSQL', icon: <IconDatabase /> },
+                { to: '/node', label: 'Node apps', icon: <IconNode /> },
                 { to: '/redis', label: 'Redis', icon: <IconServer /> },
                 { to: '/ftp', label: 'FTP', icon: <IconFolder /> },
                 { to: '/files', label: 'Files', icon: <IconFolder /> },

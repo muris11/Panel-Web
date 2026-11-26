@@ -213,13 +213,23 @@ func (s *Store) SetDomainSSL(ctx context.Context, id int64, status, source strin
 	return wrap("update the certificate", err)
 }
 
-// scopeOwnerAny narrows a query that already joins users as u.
+// scopeOwnerAny narrows a query that already joins users as u. An
+// administrator sees everything; a reseller sees the accounts it owns; a
+// plain account sees its own rows -- its owner_id is the reseller above it,
+// never itself, so the reseller clause would hide everything.
 func scopeOwnerAny(query string, args []any, owner *User) (string, []any) {
 	if owner == nil || owner.IsAdmin() {
 		return query, args
 	}
 
-	query += ` AND u.owner_id = ?`
+	if owner.Role == RoleReseller {
+		query += ` AND u.owner_id = ?`
+		args = append(args, owner.ID)
+
+		return query, args
+	}
+
+	query += ` AND d.user_id = ?`
 	args = append(args, owner.ID)
 
 	return query, args

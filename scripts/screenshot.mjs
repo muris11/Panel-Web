@@ -44,6 +44,7 @@ const screens = [
     { name: '27-tickets', path: '/tickets' },
     { name: '28-announcements', path: '/announcements' },
     { name: '29-packages', path: '/packages' },
+    { name: '30-node-apps', path: '/node' },
     { name: '16-new-website', path: '/domains', click: 'New website' },
     { name: '17-new-mailbox', path: '/mail', click: 'Manage' },
     { name: '18-new-database', path: '/databases', click: 'New database' },

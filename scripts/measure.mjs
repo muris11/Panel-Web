@@ -43,6 +43,7 @@ const screens = [
     '/tickets',
     '/announcements',
     '/activity',
+    '/node',
     '/settings',
 ];
 const widths = [1440, 1024, 390];

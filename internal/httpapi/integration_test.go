@@ -56,6 +56,7 @@ func harness(t *testing.T) (*httptest.Server, *store.Store, *worker.Worker) {
 
 	// Order matters: children before parents.
 	for _, statement := range []string{
+		"DELETE FROM `node_apps`",
 		"DELETE FROM `ticket_messages`",
 		"DELETE FROM `tickets`",
 		"DELETE FROM `announcements`",

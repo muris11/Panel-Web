@@ -48,6 +48,8 @@ unless it says otherwise. "Agent" is the private call the panel makes over
 | Tickets between an account and whoever answers it | `support.go` | none |
 | Announcements to a role, or to a reseller's own accounts | `support.go` | none |
 | Hosting packages: create, edit, delete; quota and shell re-applied on change | `packages.go` | `account.set_quota`, `account.set_ssh` |
+| Node.js apps: create, restart, delete; env written 0600 by the agent | `nodeapps.go` | `nodeapp.provision`, `nodeapp.restart`, `nodeapp.deprovision` |
+| PHP versions offered as a dropdown from the agent's installed list | `nodeapps.go` | `php.versions` |
 
 ## Deliberate differences from the Laravel panel
 
