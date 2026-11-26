@@ -184,8 +184,10 @@ export function DomainDetail({
                             </>
                         ) : (
                             <p className="muted">
-                                A free Let's Encrypt certificate is used. The domain must already point at{' '}
-                                {domain?.publicIp || 'this server'}.
+                                {domain?.sslStatus
+                                    ? `A certificate was requested but is ${domain.sslStatus}. The domain must point at `
+                                    : 'No certificate yet. The button above asks for a free one; the domain must point at '}
+                                {domain?.publicIp || 'this server'} first.
                             </p>
                         )}
                     </div>

@@ -242,6 +242,7 @@ function AddWebsite({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
                     value={name}
                     onChange={(event) => setName(event.target.value.toLowerCase())}
                     placeholder="example.com"
+                    hint="Lowercase letters, digits, dots and dashes. A wildcard starts with *."
                     error={fields.name}
                     required
                 />
@@ -253,6 +254,7 @@ function AddWebsite({ onClose, onAdded }: { onClose: () => void; onAdded: () => 
                         <option value="subdomain">Subdomain of an existing zone</option>
                         <option value="pointer">Pointer to another site</option>
                     </select>
+                    <span className="field-hint">A pointer shares another site's document root and serves it under this name.</span>
                 </label>
 
                 {accounts.length === 0 ? (
