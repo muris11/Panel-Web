@@ -15,6 +15,7 @@ import {
     IconPlus,
     SkeletonRows,
     statusTone,
+    TableFoot,
 } from '../ui';
 
 export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' | 'bad') => void }) {
@@ -180,6 +181,22 @@ export function Accounts({ onToast }: { onToast: (message: string, tone?: 'ok' |
                             ? 'Try part of a username, a name or an email address.'
                             : 'A hosting account is what owns a Linux user, its websites and its mail.'}
                     </Empty>
+                ) : null}
+
+                {accounts !== null && accounts.length > 0 ? (
+                    <TableFoot>
+                        <span>{accounts.length} account{accounts.length === 1 ? '' : 's'}</span>
+                        <span className="sep" />
+                        <span>{accounts.filter((a) => a.status === 'active').length} active</span>
+                        <span className="sep" />
+                        <span>{accounts.filter((a) => a.status === 'suspended').length} suspended</span>
+                        {search ? (
+                            <>
+                                <span className="sep" />
+                                <span>{visible.length} matching the search</span>
+                            </>
+                        ) : null}
+                    </TableFoot>
                 ) : null}
             </Card>
 

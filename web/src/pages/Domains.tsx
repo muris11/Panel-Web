@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 
 import { api, when, type Account, type DomainDetail } from '../api';
 import { linkProps } from '../router';
-import { Badge, Button, Card, Drawer, Empty, errorMessage, Field, SkeletonRows, statusTone } from '../ui';
+import { Badge, Button, Card, Drawer, Empty, errorMessage, Field, SkeletonRows, statusTone, TableFoot } from '../ui';
 
 interface DomainRow extends DomainDetail {
     username: string;
@@ -138,6 +138,20 @@ export function Domains() {
                     <Empty title={search ? 'No domain matches that search' : 'No websites yet'}>
                         {search ? 'Try part of the domain or the account name.' : 'Add the first website to get started.'}
                     </Empty>
+                ) : null}
+
+                {domains !== null && domains.length > 0 ? (
+                    <TableFoot>
+                        <span>{domains.length} website{domains.length === 1 ? '' : 's'}</span>
+                        <span className="sep" />
+                        <span>{domains.filter((d) => d.sslStatus === 'active').length} with a certificate</span>
+                        {search ? (
+                            <>
+                                <span className="sep" />
+                                <span>{visible.length} matching the search</span>
+                            </>
+                        ) : null}
+                    </TableFoot>
                 ) : null}
             </Card>
 

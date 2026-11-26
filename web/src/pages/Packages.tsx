@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { ApiError, api } from '../api';
-import { Badge, Button, Card, CardHead, Drawer, Empty, errorMessage, SkeletonRows } from '../ui';
+import { Badge, Button, Card, CardHead, Drawer, Empty, errorMessage, SkeletonRows, TableFoot } from '../ui';
 
 interface Package {
     id: number;
@@ -279,6 +279,16 @@ export function Packages({ role, onToast }: { role: string; onToast: (message: s
                         </table>
                     </div>
                 )}
+
+                {page && page.packages.length > 0 ? (
+                    <TableFoot>
+                        <span>{page.packages.length} package{page.packages.length === 1 ? '' : 's'}</span>
+                        <span className="sep" />
+                        <span>
+                            {page.packages.reduce((sum, pkg) => sum + pkg.accounts, 0)} accounts on them
+                        </span>
+                    </TableFoot>
+                ) : null}
             </Card>
 
             {role !== 'admin' ? (

@@ -299,6 +299,10 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
     );
 }
 
+export function TableFoot({ children }: { children: ReactNode }) {
+    return <div className="table-foot">{children}</div>;
+}
+
 export function SkeletonRows({ rows = 4, columns = 4 }: { rows?: number; columns?: number }) {
     return (
         <tbody>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 import { api, when } from '../api';
-import { Badge, Button, Card, CardHead, Drawer, Empty, errorMessage, SkeletonRows, statusTone } from '../ui';
+import { Badge, Button, Card, CardHead, Drawer, Empty, errorMessage, SkeletonRows, statusTone, TableFoot } from '../ui';
 
 interface Ticket {
     id: number;
@@ -247,6 +247,16 @@ export function Tickets({
                     </table>
                     </div>
                 )}
+
+                {page && (page.tickets ?? []).length > 0 ? (
+                    <TableFoot>
+                        <span>{(page.tickets ?? []).length} ticket{(page.tickets ?? []).length === 1 ? '' : 's'} in this box</span>
+                        <span className="sep" />
+                        <span>{(page.tickets ?? []).filter((t) => t.status === 'open').length} open</span>
+                        <span className="sep" />
+                        <span>{(page.tickets ?? []).filter((t) => t.status === 'answered').length} answered</span>
+                    </TableFoot>
+                ) : null}
             </Card>
 
             {composing ? (
